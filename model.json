@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2024-09-17",
+  "project_context": {
+    "name": "Assistente Financeiro IA",
+    "type": "flutter_mobile_app",
+    "complexity": "medium-high",
+    "domain": "financial_management",
+    "architecture": "clean_architecture_getx"
+  },
+  "model_configuration": {
+    "primary_model": "gpt-5-codex-pro",
+    "reasoning_level": "medium",
+    "fallback_model": "gpt-4.1-codex",
+    "context_window": "extended"
+  },
+  "reasoning_strategy": {
+    "level": "medium",
+    "justification": "Projeto Flutter com arquitetura complexa (Clean Architecture + GetX) e integração Firebase. Requer análise cuidadosa de dependências entre camadas, mas não é crítico como sistemas médicos ou financeiros de alta frequência.",
+    "scenarios": {
+      "fast": [
+        "Correções de UI simples",
+        "Ajustes de estilo e tema",
+        "Adição de widgets básicos",
+        "Correções de lint menores"
+      ],
+      "medium": [
+        "Implementação de novas features",
+        "Modificações em controllers",
+        "Integração com APIs",
+        "Refatoração de código",
+        "Correções de bugs complexos"
+      ],
+      "deep": [
+        "Mudanças na arquitetura",
+        "Migrações de banco de dados",
+        "Alterações em autenticação",
+        "Implementação de segurança",
+        "Performance crítica"
+      ]
+    }
+  },
+  "context_priorities": {
+    "high_priority": [
+      "lib/core/",
+      "lib/features/auth/",
+      "lib/features/expenses/",
+      "pubspec.yaml",
+      "firebase_options.dart"
+    ],
+    "medium_priority": [
+      "lib/features/profile/",
+      "lib/features/onboarding/",
+      "lib/shared/",
+      "assets/"
+    ],
+    "low_priority": [
+      "test/",
+      "docs/",
+      "scripts/",
+      "build/"
+    ]
+  },
+  "specialized_knowledge": {
+    "flutter_patterns": {
+      "state_management": "GetX (controllers, bindings, reactive programming)",
+      "architecture": "Clean Architecture (data, domain, presentation layers)",
+      "navigation": "GetX routing with middleware",
+      "dependency_injection": "GetX dependency injection"
+    },
+    "firebase_integration": {
+      "authentication": "Firebase Auth + Google/Apple Sign-In",
+      "database": "Firestore with offline support",
+      "security": "Firestore security rules awareness"
+    },
+    "financial_domain": {
+      "data_sensitivity": "Financial data requires extra security",
+      "offline_support": "Critical for expense tracking",
+      "categorization": "AI-powered expense categorization",
+      "reporting": "Charts and financial analytics"
+    }
+  },
+  "performance_considerations": {
+    "code_analysis": "Always run flutter analyze before suggesting changes",
+    "build_impact": "Consider impact on app size and performance",
+    "offline_first": "Prioritize offline functionality",
+    "responsive_design": "Use ScreenUtil for consistent sizing"
+  },
+  "quality_gates": {
+    "linting": "Must pass flutter_lints rules",
+    "architecture": "Maintain Clean Architecture separation",
+    "testing": "Suggest tests for business logic",
+    "documentation": "Update comments for complex logic"
+  },
+  "model_selection_notes": {
+    "primary_choice": "gpt-5-codex-pro escolhido por sua capacidade superior em análise de arquitetura complexa e compreensão de padrões Flutter/Dart",
+    "reasoning_level": "medium selecionado para balancear qualidade de análise com velocidade de resposta, adequado para desenvolvimento ágil",
+    "fallback_strategy": "gpt-4.1-codex como backup para garantir disponibilidade contínua",
+    "context_optimization": "Priorização de arquivos core e features principais para maximizar relevância do contexto"
+  },
+  "special_instructions": {
+    "security": "Sempre considerar implicações de segurança para dados financeiros",
+    "offline_support": "Verificar funcionamento offline antes de sugerir mudanças",
+    "design_consistency": "Manter consistência com design system roxo/amarelo",
+    "performance": "Otimizar para dispositivos móveis com recursos limitados",
+    "localization": "Considerar suporte pt_BR em todas as implementações"
+  }
+}

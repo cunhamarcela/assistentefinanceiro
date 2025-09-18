@@ -1,0 +1,86 @@
+{
+  "appName": "Assistente Financeiro IA",
+  "appId": "com.assistentefinanceiro.app",
+  "version": "1.0.0",
+  "type": "finance",
+  "theme": {
+    "primaryColor": "#1B5E20",
+    "secondaryColor": "#2E7D32",
+    "accentColor": "#4CAF50",
+    "backgroundColor": "#F1F8E9",
+    "errorColor": "#D32F2F",
+    "warningColor": "#FF9800",
+    "successColor": "#4CAF50"
+  },
+  "features": {
+    "expenses": true,
+    "budgets": true,
+    "analytics": true,
+    "chat": true,
+    "categories": true,
+    "reports": true
+  },
+  "ai": {
+    "enabled": true,
+    "provider": "openai",
+    "financialPrompts": true
+  },
+  "categories": [
+    {
+      "id": "alimentacao",
+      "name": "Alimentação",
+      "icon": "restaurant",
+      "color": "#FF5722",
+      "keywords": ["supermercado", "restaurante", "lanche", "comida", "almoço", "jantar", "café", "padaria", "açougue", "hortifruti"]
+    },
+    {
+      "id": "transporte",
+      "name": "Transporte",
+      "icon": "directions_car",
+      "color": "#2196F3",
+      "keywords": ["uber", "gasolina", "ônibus", "metro", "taxi", "combustível", "estacionamento", "pedágio", "99", "cabify"]
+    },
+    {
+      "id": "saude",
+      "name": "Saúde",
+      "icon": "local_hospital",
+      "color": "#E91E63",
+      "keywords": ["farmácia", "médico", "hospital", "remédio", "consulta", "dentista", "exame", "plano de saúde"]
+    },
+    {
+      "id": "contas",
+      "name": "Contas",
+      "icon": "receipt",
+      "color": "#FF9800",
+      "keywords": ["luz", "água", "internet", "telefone", "energia", "conta", "celular", "tv", "streaming", "netflix"]
+    },
+    {
+      "id": "lazer",
+      "name": "Lazer",
+      "icon": "movie",
+      "color": "#9C27B0",
+      "keywords": ["cinema", "show", "festa", "viagem", "entretenimento", "bar", "balada", "teatro", "parque"]
+    },
+    {
+      "id": "casa",
+      "name": "Casa",
+      "icon": "home",
+      "color": "#795548",
+      "keywords": ["aluguel", "financiamento", "móveis", "decoração", "limpeza", "manutenção", "reforma"]
+    },
+    {
+      "id": "educacao",
+      "name": "Educação",
+      "icon": "school",
+      "color": "#3F51B5",
+      "keywords": ["curso", "livro", "escola", "faculdade", "mensalidade", "material escolar", "aula"]
+    },
+    {
+      "id": "outros",
+      "name": "Outros",
+      "icon": "more_horiz",
+      "color": "#607D8B",
+      "keywords": []
+    }
+  ]
+}

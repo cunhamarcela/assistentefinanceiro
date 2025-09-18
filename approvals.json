@@ -1,0 +1,139 @@
+{
+  "version": "1.0.0",
+  "project_type": "flutter_firebase",
+  "last_updated": "2024-09-17",
+  "permissions": {
+    "file_operations": {
+      "file_read": true,
+      "file_write": true,
+      "file_delete": false,
+      "directory_create": true,
+      "directory_delete": false
+    },
+    "code_operations": {
+      "dart_analysis": true,
+      "flutter_analyze": true,
+      "code_generation": true,
+      "build_runner": false,
+      "hot_reload": true
+    },
+    "package_management": {
+      "install_packages": false,
+      "update_packages": false,
+      "remove_packages": false,
+      "pubspec_edit": false
+    },
+    "testing": {
+      "run_tests": true,
+      "widget_tests": true,
+      "integration_tests": false,
+      "test_coverage": true
+    },
+    "database": {
+      "firestore_read": true,
+      "firestore_write": true,
+      "sqlite_operations": true,
+      "migration_scripts": false
+    },
+    "build_config": {
+      "android_build": false,
+      "ios_build": false,
+      "gradle_config": false,
+      "podfile_config": false,
+      "firebase_config": false
+    },
+    "security": {
+      "keystore_access": false,
+      "certificate_access": false,
+      "env_variables": false,
+      "secure_storage_read": true,
+      "secure_storage_write": true
+    },
+    "external": {
+      "network_requests": true,
+      "api_calls": true,
+      "open_browser": false,
+      "system_commands": false
+    },
+    "development": {
+      "debug_mode": true,
+      "logging": true,
+      "profiling": false,
+      "performance_monitoring": true
+    }
+  },
+  "restricted_files": [
+    "pubspec.yaml",
+    "pubspec.lock",
+    "firebase.json",
+    "firebase_options.dart",
+    "android/app/build.gradle.kts",
+    "android/local.properties",
+    "ios/Runner/Info.plist",
+    "ios/Runner/GoogleService-Info.plist",
+    "android/app/google-services.json",
+    "ios/Runner/*.entitlements",
+    "android/app/src/main/AndroidManifest.xml"
+  ],
+  "auto_approve_patterns": [
+    "lib/features/**/presentation/**/*.dart",
+    "lib/features/**/domain/**/*.dart",
+    "lib/shared/widgets/**/*.dart",
+    "lib/core/theme/**/*.dart",
+    "lib/core/utils/**/*.dart",
+    "test/**/*.dart",
+    "assets/**/*"
+  ],
+  "require_approval_patterns": [
+    "lib/core/storage/**/*.dart",
+    "lib/core/routes/**/*.dart",
+    "lib/features/**/data/datasources/**/*.dart",
+    "lib/main.dart",
+    "android/**/*",
+    "ios/**/*",
+    "scripts/**/*"
+  ],
+  "flutter_specific": {
+    "widget_creation": true,
+    "state_management": true,
+    "navigation": true,
+    "theme_modifications": true,
+    "asset_management": true,
+    "localization": false
+  },
+  "firebase_specific": {
+    "auth_operations": true,
+    "firestore_queries": true,
+    "storage_operations": false,
+    "cloud_functions": false,
+    "analytics": false,
+    "crashlytics": false
+  },
+  "getx_specific": {
+    "controller_creation": true,
+    "binding_creation": true,
+    "route_management": false,
+    "dependency_injection": true,
+    "state_updates": true
+  },
+  "approval_workflow": {
+    "require_explanation": true,
+    "require_testing_plan": false,
+    "require_rollback_plan": false,
+    "auto_approve_minor_changes": true,
+    "escalate_security_changes": true
+  },
+  "notifications": {
+    "on_restricted_file_access": true,
+    "on_package_changes": true,
+    "on_build_config_changes": true,
+    "on_security_related_changes": true
+  },
+  "comments": {
+    "project_context": "Assistente Financeiro IA - Flutter app with Firebase backend",
+    "architecture": "Clean Architecture + GetX pattern",
+    "security_notes": "App handles financial data - extra security measures required",
+    "offline_support": "Hybrid storage (Firebase + SQLite) - consider offline scenarios",
+    "design_system": "Custom design system with purple/yellow theme - maintain consistency"
+  }
+}
