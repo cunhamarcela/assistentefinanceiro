@@ -62,3 +62,10 @@ Para usar:
 O app está totalmente funcional sem o Apple Sign-In!
 
 
+
+
+
+
+
+
+

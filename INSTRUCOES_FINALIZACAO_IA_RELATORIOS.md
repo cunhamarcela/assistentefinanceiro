@@ -245,3 +245,4 @@ Customize em `lib/features/chat/domain/entities/financial_insight.dart`:
 **🎉 Parabéns! Você agora tem um sistema completo de IA interativa e relatórios visuais que vai revolucionar a experiência dos usuários e aumentar significativamente as métricas de retenção!**
 
 **📞 Se precisar de ajuda com qualquer implementação ou quiser adicionar novas funcionalidades, é só me chamar!**
+

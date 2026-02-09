@@ -1,7 +1,9 @@
+import 'package:collection/collection.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:get/get.dart';
 import '../../domain/entities/insight_report.dart';
+import '../../domain/entities/category.dart';
 import '../../../auth/data/services/auth_service.dart';
 import '../datasources/expense_local_datasource.dart';
 import '../models/expense_model.dart';
@@ -52,7 +54,10 @@ abstract class ReportsLocalDataSource {
 
 /// Implementação do data source local usando SQLite
 class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
-  final ExpenseLocalDataSource _expenseDataSource = ExpenseLocalDataSource();
+  final ExpenseLocalDataSource _expenseDataSource;
+  
+  ReportsLocalDataSourceImpl({required ExpenseLocalDataSource expenseDataSource})
+      : _expenseDataSource = expenseDataSource;
   
   static Database? _database;
   static const String _databaseName = 'reports.db';
@@ -127,8 +132,8 @@ class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
       final categoryNames = <String, String>{};
       
       for (final expense in expenses) {
-        final category = categories.firstWhereOrNull((c) => c.id == expense.categoryId);
-        final categoryName = category?.name ?? 'Outros';
+        final category = _findCategoryById(expense.categoryId, categories);
+        final categoryName = category?.name ?? _getCategoryNameFromId(expense.categoryId);
         
         categoryTotals[expense.categoryId] = 
             (categoryTotals[expense.categoryId] ?? 0.0) + expense.amount;
@@ -499,6 +504,11 @@ class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
     DateTime endDate,
   ) async {
     try {
+      print('📊 [Reports] Buscando despesas do período:');
+      print('   - UserId: $userId');
+      print('   - StartDate: $startDate (${startDate.millisecondsSinceEpoch})');
+      print('   - EndDate: $endDate (${endDate.millisecondsSinceEpoch})');
+      
       final db = await _expenseDataSource.database;
       
       final result = await db.query(
@@ -512,7 +522,16 @@ class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
         orderBy: 'date ASC',
       );
 
-      return result.map((data) => ExpenseModel.fromSQLite(data)).toList();
+      print('📊 [Reports] Despesas encontradas: ${result.length}');
+      if (result.isNotEmpty) {
+        for (var i = 0; i < result.length && i < 3; i++) {
+          final expense = result[i];
+          print('   - Despesa $i: ${expense['description']} - R\$ ${expense['amount']} - Date: ${expense['date']}');
+        }
+      }
+
+      final expenses = result.map((data) => ExpenseModel.fromSQLite(data)).toList();
+      return expenses;
     } catch (e) {
       print('❌ Erro ao buscar despesas do período: $e');
       return [];
@@ -577,7 +596,7 @@ class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
     }
   }
 
-  // Métodos de serialização simplificados
+  // Métodos de serialização
   String _encodeChartData(List<ChartPoint> data) {
     return data.map((point) => '${point.label}:${point.value}').join('|');
   }
@@ -595,18 +614,156 @@ class ReportsLocalDataSourceImpl implements ReportsLocalDataSource {
   }
 
   String _encodeJson(Map<String, dynamic> data) {
-    return data.toString(); // Simplificado
+    try {
+      // Converter para string JSON simples
+      final entries = data.entries.map((e) => '${e.key}:${e.value}').join(',');
+      return entries;
+    } catch (e) {
+      print('❌ Erro ao codificar JSON: $e');
+      return '';
+    }
   }
 
   Map<String, dynamic> _decodeJson(String data) {
-    return <String, dynamic>{}; // Simplificado
+    try {
+      if (data.isEmpty) return {};
+      
+      final result = <String, dynamic>{};
+      final entries = data.split(',');
+      
+      for (final entry in entries) {
+        final parts = entry.split(':');
+        if (parts.length == 2) {
+          final key = parts[0];
+          final valueStr = parts[1];
+          
+          // Tentar converter para double, senão manter como string
+          final value = double.tryParse(valueStr) ?? valueStr;
+          result[key] = value;
+        }
+      }
+      
+      return result;
+    } catch (e) {
+      print('❌ Erro ao decodificar JSON: $e');
+      return {};
+    }
   }
 
   String _encodeRecommendations(List<InsightRecommendation> recommendations) {
-    return recommendations.length.toString(); // Simplificado
+    try {
+      return recommendations.map((rec) => 
+        '${rec.title}|${rec.description}|${rec.priority.name}|${rec.actionText ?? ''}'
+      ).join('###');
+    } catch (e) {
+      print('❌ Erro ao codificar recomendações: $e');
+      return '';
+    }
   }
 
   List<InsightRecommendation> _decodeRecommendations(String data) {
-    return []; // Simplificado
+    try {
+      if (data.isEmpty) return [];
+      
+      return data.split('###').map((item) {
+        final parts = item.split('|');
+        if (parts.length >= 3) {
+          return InsightRecommendation(
+            id: 'rec_${DateTime.now().millisecondsSinceEpoch}',
+            title: parts[0],
+            description: parts[1],
+            priority: _parseRecommendationPriority(parts[2]),
+            actionText: parts.length > 3 && parts[3].isNotEmpty ? parts[3] : null,
+          );
+        }
+        return null;
+      }).whereType<InsightRecommendation>().toList();
+    } catch (e) {
+      print('❌ Erro ao decodificar recomendações: $e');
+      return [];
+    }
+  }
+
+  InsightRecommendationPriority _parseRecommendationPriority(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return InsightRecommendationPriority.high;
+      case 'medium':
+        return InsightRecommendationPriority.medium;
+      case 'low':
+        return InsightRecommendationPriority.low;
+      default:
+        return InsightRecommendationPriority.medium;
+    }
+  }
+  
+  /// Busca categoria por ID com fallback para IDs sem sufixo do usuário
+  ExpenseCategory? _findCategoryById(String categoryId, List<ExpenseCategory> categories) {
+    if (categoryId.isEmpty || categories.isEmpty) return null;
+    
+    // 1. Tentar match exato
+    final exactMatch = categories.firstWhereOrNull((cat) => cat.id == categoryId);
+    if (exactMatch != null) return exactMatch;
+    
+    // 2. Tentar match onde o ID da categoria começa com o categoryId buscado
+    final startsWithMatch = categories.firstWhereOrNull(
+      (cat) => cat.id.startsWith('${categoryId}_')
+    );
+    if (startsWithMatch != null) return startsWithMatch;
+    
+    // 3. Tentar match onde o categoryId começa com o ID base da categoria
+    final reverseMatch = categories.firstWhereOrNull(
+      (cat) => categoryId.startsWith('${cat.id}_')
+    );
+    if (reverseMatch != null) return reverseMatch;
+    
+    // 4. Extrair ID base e tentar match
+    final baseId = _extractBaseCategoryId(categoryId);
+    if (baseId != categoryId) {
+      return categories.firstWhereOrNull(
+        (cat) => cat.id == baseId || 
+                 cat.id.startsWith('${baseId}_') ||
+                 _extractBaseCategoryId(cat.id) == baseId
+      );
+    }
+    
+    return null;
+  }
+  
+  /// Extrai o ID base de uma categoria removendo o sufixo do usuário
+  String _extractBaseCategoryId(String categoryId) {
+    final defaultIds = [
+      'alimentacao', 'transporte', 'saude', 'contas', 'lazer',
+      'casa', 'educacao', 'roupas', 'tecnologia', 'pets', 'outros', 'investimentos'
+    ];
+    
+    for (final baseId in defaultIds) {
+      if (categoryId == baseId || categoryId.startsWith('${baseId}_')) {
+        return baseId;
+      }
+    }
+    return categoryId;
+  }
+  
+  /// Obtém o nome da categoria a partir do ID base
+  String _getCategoryNameFromId(String categoryId) {
+    final baseId = _extractBaseCategoryId(categoryId);
+    
+    final categoryNames = {
+      'alimentacao': 'Alimentação',
+      'transporte': 'Transporte',
+      'saude': 'Saúde',
+      'contas': 'Contas',
+      'lazer': 'Lazer',
+      'casa': 'Casa',
+      'educacao': 'Educação',
+      'roupas': 'Roupas e Beleza',
+      'tecnologia': 'Tecnologia',
+      'pets': 'Pets',
+      'outros': 'Outros',
+      'investimentos': 'Investimentos',
+    };
+    
+    return categoryNames[baseId] ?? 'Outros';
   }
 }

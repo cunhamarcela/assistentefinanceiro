@@ -8,6 +8,7 @@ class FinancialProfileModel {
   final String userId;
   final double monthlyIncome;
   final double totalBudget;
+  final double monthlyInvestmentGoal;
   final Map<String, double> categoryBudgets;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -17,6 +18,7 @@ class FinancialProfileModel {
     required this.userId,
     required this.monthlyIncome,
     required this.totalBudget,
+    this.monthlyInvestmentGoal = 0.0,
     required this.categoryBudgets,
     required this.createdAt,
     required this.updatedAt,
@@ -29,6 +31,7 @@ class FinancialProfileModel {
       userId: entity.userId,
       monthlyIncome: entity.monthlyIncome,
       totalBudget: entity.totalBudget,
+      monthlyInvestmentGoal: entity.monthlyInvestmentGoal,
       categoryBudgets: Map.from(entity.categoryBudgets),
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -42,6 +45,7 @@ class FinancialProfileModel {
       userId: userId,
       monthlyIncome: monthlyIncome,
       totalBudget: totalBudget,
+      monthlyInvestmentGoal: monthlyInvestmentGoal,
       categoryBudgets: Map.from(categoryBudgets),
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -61,6 +65,7 @@ class FinancialProfileModel {
       userId: data['userId'] as String,
       monthlyIncome: (data['monthlyIncome'] as num).toDouble(),
       totalBudget: (data['totalBudget'] as num).toDouble(),
+      monthlyInvestmentGoal: (data['monthlyInvestmentGoal'] as num?)?.toDouble() ?? 0.0,
       categoryBudgets: categoryBudgets,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
@@ -74,6 +79,7 @@ class FinancialProfileModel {
       'userId': userId,
       'monthlyIncome': monthlyIncome,
       'totalBudget': totalBudget,
+      'monthlyInvestmentGoal': monthlyInvestmentGoal,
       'categoryBudgets': categoryBudgets,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -94,6 +100,7 @@ class FinancialProfileModel {
       userId: data['userId'] as String,
       monthlyIncome: (data['monthlyIncome'] as num).toDouble(),
       totalBudget: (data['totalBudget'] as num).toDouble(),
+      monthlyInvestmentGoal: (data['monthlyInvestmentGoal'] as num?)?.toDouble() ?? 0.0,
       categoryBudgets: categoryBudgets,
       createdAt: DateTime.fromMillisecondsSinceEpoch(data['createdAt'] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(data['updatedAt'] as int),
@@ -107,6 +114,7 @@ class FinancialProfileModel {
       'userId': userId,
       'monthlyIncome': monthlyIncome,
       'totalBudget': totalBudget,
+      'monthlyInvestmentGoal': monthlyInvestmentGoal,
       'categoryBudgets': jsonEncode(categoryBudgets),
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
@@ -118,6 +126,7 @@ class FinancialProfileModel {
     String? userId,
     double? monthlyIncome,
     double? totalBudget,
+    double? monthlyInvestmentGoal,
     Map<String, double>? categoryBudgets,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -127,6 +136,7 @@ class FinancialProfileModel {
       userId: userId ?? this.userId,
       monthlyIncome: monthlyIncome ?? this.monthlyIncome,
       totalBudget: totalBudget ?? this.totalBudget,
+      monthlyInvestmentGoal: monthlyInvestmentGoal ?? this.monthlyInvestmentGoal,
       categoryBudgets: categoryBudgets ?? Map.from(this.categoryBudgets),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -141,6 +151,7 @@ class FinancialProfileModel {
       userId: userId,
       monthlyIncome: 0.0,
       totalBudget: 0.0,
+      monthlyInvestmentGoal: 0.0,
       categoryBudgets: {},
       createdAt: now,
       updatedAt: now,

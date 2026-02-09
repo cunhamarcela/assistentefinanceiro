@@ -73,10 +73,11 @@ feature_name/
 ```
 
 ### Design System
-- **Cores**: Usar `AppColors` (paleta roxo/amarelo)
+- **Cores**: Usar `AppColors` — **OBRIGATÓRIO consultar `docs/DESIGN_SYSTEM_COLORS.md`**
 - **Tipografia**: Usar `AppTextStyles` (hierarquia definida)
 - **Componentes**: Usar widgets do `/shared/widgets/`
 - **Espaçamento**: Usar `AppSpacing` para consistência
+- **Regras de Cor**: Ver `.cursorrules` para regras detalhadas
 
 ## 🔄 Fluxo de Trabalho
 
@@ -180,10 +181,12 @@ feature_name/
 - **ExpenseCard**: Card para exibição de gastos
 
 ### Padrões Visuais
-- **Gradientes**: Usar paleta roxo (#6A4DFF) para amarelo (#FFD700)
+- **Paleta Oficial**: Navy (#0A1931, #1A3D63), Blue (#4A7FA7, #B3CFE5), Accent (#3CB371)
+- **Gradientes**: Usar apenas os 2 gradientes oficiais (ver `DESIGN_SYSTEM_COLORS.md`)
 - **Bordas**: Radius padrão 12px, cards 16px
 - **Sombras**: Elevation sutil, evitar sombras pesadas
 - **Ícones**: Cupertino Icons como padrão
+- **⚠️ PROIBIDO**: Cores hardcoded (HEX/RGB direto no código)
 
 ## 📱 Funcionalidades Implementadas
 
@@ -209,6 +212,18 @@ feature_name/
 
 ---
 
-**Versão**: 1.0.0  
-**Última Atualização**: Setembro 2024  
+## 📚 Documentação de Referência
+
+| Documento | Caminho | Propósito |
+|-----------|---------|-----------|
+| Design System Cores | `docs/DESIGN_SYSTEM_COLORS.md` | Fonte de verdade para cores |
+| Cursor Rules | `.cursorrules` | Regras automáticas para IA |
+| Implementação Cores | `lib/core/theme/app_colors.dart` | Tokens de cor |
+| Tema Global | `lib/core/theme/app_theme.dart` | ThemeData Flutter |
+
+---
+
+**Versão**: 1.1.0  
+**Última Atualização**: Dezembro 2024  
 **Mantenedor**: Assistente Financeiro IA Team
+

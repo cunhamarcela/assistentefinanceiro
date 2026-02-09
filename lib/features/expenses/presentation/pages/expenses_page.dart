@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../controllers/expense_controller.dart';
 import '../widgets/expense_card.dart';
+import '../../domain/entities/expense.dart';
 
 class ExpensesPage extends GetView<ExpenseController> {
   const ExpensesPage({super.key});
@@ -28,6 +29,12 @@ class ExpensesPage extends GetView<ExpenseController> {
       ),
       body: Column(
         children: [
+          // Filtros por período
+          _buildPeriodFilters(),
+          
+          // Filtros por tipo de pagamento
+          _buildPaymentTypeFilters(),
+          
           // Filtros ativos
           Obx(() {
             if (!controller.hasActiveFilters) {
@@ -123,7 +130,7 @@ class ExpensesPage extends GetView<ExpenseController> {
             Icon(
               Icons.receipt_long,
               size: 64.sp,
-              color: Colors.grey,
+              color: AppColors.colorTextMuted,
             ),
             SizedBox(height: 16.h),
             Text(
@@ -131,7 +138,7 @@ class ExpensesPage extends GetView<ExpenseController> {
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey,
+                color: AppColors.colorTextMuted,
               ),
             ),
             SizedBox(height: 8.h),
@@ -141,7 +148,7 @@ class ExpensesPage extends GetView<ExpenseController> {
                   : 'Adicione sua primeira despesa para começar',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Colors.grey,
+                color: AppColors.colorTextMuted,
               ),
               textAlign: TextAlign.center,
             ),
@@ -160,6 +167,9 @@ class ExpensesPage extends GetView<ExpenseController> {
   Widget _buildBottomNavigation() {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
+      backgroundColor: AppColors.background,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textSecondary,
       currentIndex: 1,
       onTap: (index) {
         switch (index) {
@@ -170,9 +180,12 @@ class ExpensesPage extends GetView<ExpenseController> {
             // Já está na página de despesas
             break;
           case 2:
-            Get.toNamed(AppRoutes.addExpense);
+            Get.toNamed(AppRoutes.incomes);
             break;
           case 3:
+            Get.toNamed(AppRoutes.chat);
+            break;
+          case 4:
             Get.toNamed(AppRoutes.analytics);
             break;
         }
@@ -183,12 +196,16 @@ class ExpensesPage extends GetView<ExpenseController> {
           label: 'Início',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.list),
+          icon: Icon(Icons.arrow_downward),
           label: 'Despesas',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.add_circle),
-          label: 'Adicionar',
+          icon: Icon(Icons.arrow_upward),
+          label: 'Receitas',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.smart_toy),
+          label: 'Chat IA',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.analytics),
@@ -423,8 +440,8 @@ class ExpensesPage extends GetView<ExpenseController> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Excluir', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.delete, color: AppColors.colorError),
+            title: const Text('Excluir', style: TextStyle(color: AppColors.colorError)),
             onTap: () {
               Navigator.of(context).pop();
               controller.confirmDeleteExpense(expense);
@@ -439,6 +456,93 @@ class ExpensesPage extends GetView<ExpenseController> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodFilters() {
+    return Container(
+      height: 50.h,
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: Obx(() => ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        children: [
+          _buildPeriodChip('Hoje', 'today'),
+          SizedBox(width: 8.w),
+          _buildPeriodChip('Esta Semana', 'week'),
+          SizedBox(width: 8.w),
+          _buildPeriodChip('Este Mês', 'month'),
+          SizedBox(width: 8.w),
+          _buildPeriodChip('Todos', 'all'),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildPeriodChip(String label, String period) {
+    final isSelected = controller.selectedPeriodFilter.value == period;
+    
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        controller.filterByPeriod(selected ? period : 'all');
+      },
+      selectedColor: AppColors.primary.withOpacity(0.3),
+      checkmarkColor: AppColors.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        fontSize: 13.sp,
+      ),
+    );
+  }
+
+  Widget _buildPaymentTypeFilters() {
+    return Container(
+      height: 50.h,
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: Obx(() => ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        children: [
+          _buildPaymentChip('Todos', null, Icons.all_inclusive),
+          SizedBox(width: 8.w),
+          _buildPaymentChip('Crédito', PaymentType.credit, Icons.credit_card),
+          SizedBox(width: 8.w),
+          _buildPaymentChip('Débito', PaymentType.debit, Icons.payment),
+          SizedBox(width: 8.w),
+          _buildPaymentChip('Dinheiro', PaymentType.cash, Icons.money),
+          SizedBox(width: 8.w),
+          _buildPaymentChip('PIX', PaymentType.pix, Icons.pix),
+          SizedBox(width: 8.w),
+          _buildPaymentChip('Parceladas', 'installments', Icons.splitscreen),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildPaymentChip(String label, dynamic type, IconData icon) {
+    final isSelected = controller.selectedPaymentTypeFilter.value == type;
+    
+    return FilterChip(
+      avatar: Icon(
+        icon,
+        size: 16.sp,
+        color: isSelected ? AppColors.primary : Colors.grey[600],
+      ),
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        controller.filterByPaymentType(selected ? type : null);
+      },
+      selectedColor: AppColors.primary.withOpacity(0.3),
+      checkmarkColor: AppColors.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        fontSize: 13.sp,
       ),
     );
   }

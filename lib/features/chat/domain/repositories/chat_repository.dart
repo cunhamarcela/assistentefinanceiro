@@ -1,6 +1,6 @@
 import '../entities/chat_message.dart';
 import '../entities/chat_conversation.dart';
-import '../entities/financial_insight.dart';
+import '../../../expenses/domain/entities/financial_insight.dart';
 
 /// Repositório abstrato para operações de chat IA
 abstract class ChatRepository {

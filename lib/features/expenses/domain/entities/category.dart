@@ -110,6 +110,12 @@ class ExpenseCategory extends Equatable {
         return Icons.school;
       case 'shopping_cart':
         return Icons.shopping_cart;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'devices':
+        return Icons.devices;
+      case 'trending_up':
+        return Icons.trending_up;
       case 'fitness_center':
         return Icons.fitness_center;
       case 'pets':
@@ -213,14 +219,6 @@ class ExpenseCategory extends Equatable {
       icon: 'pets',
       color: Color(0xFF4CAF50),
       keywords: ['pet', 'cachorro', 'gato', 'veterinário', 'ração', 'petshop', 'animal'],
-      isDefault: true,
-    ),
-    const ExpenseCategory(
-      id: 'investimentos',
-      name: 'Investimentos',
-      icon: 'trending_up',
-      color: Color(0xFF8BC34A),
-      keywords: ['investimento', 'poupança', 'ações', 'fundo', 'aplicação', 'renda fixa'],
       isDefault: true,
     ),
     const ExpenseCategory(

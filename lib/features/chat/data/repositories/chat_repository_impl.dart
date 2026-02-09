@@ -1,6 +1,6 @@
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_conversation.dart';
-import '../../domain/entities/financial_insight.dart';
+import '../../../expenses/domain/entities/financial_insight.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_ia_remote_datasource.dart';
 import '../datasources/chat_ia_cache_datasource.dart';
@@ -33,9 +33,13 @@ class ChatRepositoryImpl implements ChatRepository {
       
       // Fallback para resposta offline
       return ChatMessage.assistant(
-        content: 'Desculpe, estou temporariamente indisponível. '
-                'Verifique sua conexão com a internet e tente novamente. '
-                'Enquanto isso, você pode navegar pelos seus gastos e relatórios.',
+        content: '📡 **Conexão temporariamente indisponível**\n\n'
+                'Mas você ainda pode usar o app normalmente!\n\n'
+                '💰 **Registrar gastos:**\n'
+                '• "Gastei 50 no mercado"\n'
+                '• "Almoço 35 reais"\n\n'
+                '📊 **Use as perguntas rápidas** abaixo para análises!\n\n'
+                '🔄 _Verifique sua conexão e tente novamente._',
         metadata: {
           'type': 'offline_fallback',
           'has_insight': false,

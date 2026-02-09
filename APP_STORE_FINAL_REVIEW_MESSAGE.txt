@@ -1,0 +1,87 @@
+REVIEW NOTES - BUILD 1.0.1 (3) RESUBMISSION
+
+Dear Apple Review Team,
+
+Thank you for your detailed feedback on our previous submission. We have carefully addressed both issues identified in your review.
+
+ISSUE 1: GUIDELINE 5.1.2 - PRIVACY - DATA USE AND SHARING
+
+Problem Identified:
+The app privacy information indicated tracking of user data (Email Address), but the app did not implement App Tracking Transparency framework.
+
+Root Cause Analysis:
+After thorough investigation, we discovered that our Info.plist contained the NSUserTrackingUsageDescription key, which incorrectly signaled to the App Store that our app performs tracking. This created a conflict between our code configuration and our actual data collection practices.
+
+Actions Taken:
+1. REMOVED NSUserTrackingUsageDescription from Info.plist completely
+2. CLEANED UP duplicate permission entries in Info.plist
+3. VERIFIED our app does NOT perform any advertising tracking
+4. ATTEMPTED to update App Store Connect privacy settings multiple times over 24+ hours
+5. CREATED new build (1.0.1 build 3) with corrected Info.plist
+
+Technical Details:
+Our app collects Email Address, Name, and User ID solely for:
+- User authentication (Firebase Auth, Google Sign-In, Apple Sign-In)
+- App functionality and personalization
+- Cloud data synchronization
+
+Our app does NOT:
+- Track users across apps or websites for advertising purposes
+- Share user data with third-party advertisers or data brokers
+- Link collected data with third-party data for advertising
+- Require App Tracking Transparency framework
+
+App Store Connect Configuration Issue:
+We encountered persistent errors when attempting to configure privacy settings in App Store Connect. The system would not allow us to mark email data as "not used for tracking" due to the presence of NSUserTrackingUsageDescription in our previous build's Info.plist. After 24+ hours of attempts, we resolved this by removing the conflicting key from our code and creating this new build.
+
+This new build (1.0.1 build 3) has a clean Info.plist without any tracking-related keys, which accurately reflects our data collection practices.
+
+
+ISSUE 2: GUIDELINE 1.5 - SAFETY - SUPPORT URL
+
+Problem Identified:
+The Support URL (https://assistente-financeiro-ai.web.app) was not functional and displayed errors.
+
+Resolution Implemented:
+1. CREATED comprehensive support website using Firebase Hosting
+2. DEPLOYED website with complete support information
+3. VERIFIED functionality - website now returns HTTP 200 status
+4. INCLUDED on the website:
+   - Customer support contact information (suporte@assistentefinanceiro.app)
+   - Detailed troubleshooting guide and FAQ
+   - Complete Privacy Policy
+   - Terms of Service
+   - App features overview
+   - Responsive design for all devices
+
+The support URL is now fully functional and accessible at: https://assistente-financeiro-ai.web.app
+
+
+VERIFICATION COMPLETED:
+
+✓ Info.plist cleaned - no tracking keys present
+✓ Support website fully functional and accessible
+✓ Privacy practices accurately documented
+✓ App tested on multiple iOS devices (iPhone and iPad)
+✓ All functionality verified
+✓ Authentication methods working (Email, Google, Apple Sign-In)
+
+We are confident this build fully complies with App Store guidelines. The removal of NSUserTrackingUsageDescription from our code accurately reflects that our app does not perform advertising tracking, and our support infrastructure is now complete and functional.
+
+If you need any additional information or have questions about these changes, please don't hesitate to contact us through App Store Connect.
+
+Thank you for your thorough review process, which helped us identify and correct these issues.
+
+
+Contact Information:
+Support Email: suporte@assistentefinanceiro.app
+Support Website: https://assistente-financeiro-ai.web.app
+Response Time: Within 24 business hours
+
+Best regards,
+Assistente Financeiro IA Development Team
+
+
+
+
+

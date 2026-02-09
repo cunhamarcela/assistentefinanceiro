@@ -8,6 +8,8 @@ import '../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../../../shared/widgets/cards/app_card.dart';
 import '../controllers/financial_goals_controller.dart';
 import '../../domain/entities/category.dart';
+import '../widgets/category_selector_widget.dart';
+import '../widgets/goals_summary_widget.dart';
 
 class FinancialGoalsPage extends GetView<FinancialGoalsController> {
   const FinancialGoalsPage({super.key});
@@ -42,17 +44,35 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Resumo das Metas Existentes
+              _buildGoalsSummarySection(),
+              const SizedBox(height: AppSpacing.lg),
+
               // Seção de Renda Mensal
               _buildIncomeSection(),
               const SizedBox(height: AppSpacing.lg),
 
-              // Seção de Orçamento Total
+              // Seção de Meta de Investimento (NOVA)
+              _buildInvestmentGoalSection(context),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Resumo Renda vs Investimento vs Despesas
+              _buildFinancialDistributionSummary(),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Seção de Orçamento Total para Despesas
               _buildTotalBudgetSection(),
               const SizedBox(height: AppSpacing.lg),
 
-              // Seção de Orçamento por Categoria
-              _buildCategoryBudgetsSection(),
+              // Seção de Seleção de Categorias
+              _buildCategorySelectorSection(),
               const SizedBox(height: AppSpacing.lg),
+
+              // Seção de Orçamento por Categoria
+              if (controller.selectedCategories.isNotEmpty)
+                _buildCategoryBudgetsSection(),
+              if (controller.selectedCategories.isNotEmpty)
+                const SizedBox(height: AppSpacing.lg),
 
               // Resumo do Orçamento
               _buildBudgetSummary(),
@@ -115,6 +135,289 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
     );
   }
 
+  /// Seção de Meta de Investimento Mensal
+  Widget _buildInvestmentGoalSection(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: AppColors.success,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Meta de Investimento',
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: AppTextField(
+                  controller: controller.investmentGoalController,
+                  label: 'Quanto você quer investir por mês?',
+                  keyboardType: TextInputType.number,
+                  prefixIcon: Icons.savings,
+                  textInputAction: TextInputAction.done,
+                  onChanged: (value) => controller.updateInvestmentGoal(value),
+                  onEditingComplete: () => FocusScope.of(context).unfocus(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              // Botão OK para confirmar
+              Material(
+                color: AppColors.success,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    FocusScope.of(context).unfocus();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Obx(() {
+            final income = controller.monthlyIncome.value;
+            final investmentGoal = controller.monthlyInvestmentGoal.value;
+            if (income > 0 && investmentGoal > 0) {
+              final percentage = controller.investmentPercentage.round();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$percentage% da sua renda para investimentos',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'Este valor será reservado antes do cálculo do orçamento de despesas',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              );
+            }
+            return Text(
+              'Defina uma meta de investimento para construir seu patrimônio',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// Resumo visual da distribuição financeira
+  Widget _buildFinancialDistributionSummary() {
+    return Obx(() {
+      final income = controller.monthlyIncome.value;
+      final investmentGoal = controller.monthlyInvestmentGoal.value;
+      final availableForExpenses = controller.availableBudgetForExpenses;
+
+      if (income <= 0) return const SizedBox.shrink();
+
+      return AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.account_balance_wallet,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Distribuição da Renda',
+                  style: AppTextStyles.headingSmall.copyWith(
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            
+            // Linha 1: Renda Total
+            _buildDistributionRow(
+              label: 'Renda Mensal',
+              value: income,
+              color: AppColors.primary,
+              icon: Icons.attach_money,
+            ),
+            
+            if (investmentGoal > 0) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Icon(Icons.remove, size: 16, color: AppColors.textSecondary.withOpacity(0.5)),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+              
+              // Linha 2: Meta de Investimento
+              _buildDistributionRow(
+                label: 'Meta de Investimento',
+                value: investmentGoal,
+                color: AppColors.success,
+                icon: Icons.trending_up,
+                percentage: controller.investmentPercentage,
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Icon(Icons.arrow_downward, size: 16, color: AppColors.textSecondary.withOpacity(0.5)),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+            ],
+            
+            // Linha 3: Disponível para Despesas
+            _buildDistributionRow(
+              label: 'Disponível para Despesas',
+              value: availableForExpenses,
+              color: investmentGoal > 0 ? AppColors.secondary : AppColors.primary,
+              icon: Icons.shopping_cart,
+              percentage: investmentGoal > 0 ? controller.expensesPercentage : null,
+              isHighlighted: true,
+            ),
+            
+            if (investmentGoal > 0) ...[
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppColors.success, size: 18),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Seu orçamento de despesas não pode ultrapassar R\$ ${availableForExpenses.toStringAsFixed(2)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildDistributionRow({
+    required String label,
+    required double value,
+    required Color color,
+    required IconData icon,
+    double? percentage,
+    bool isHighlighted = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(isHighlighted ? AppSpacing.sm : AppSpacing.xs),
+      decoration: isHighlighted
+          ? BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            )
+          : null,
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (percentage != null)
+                  Text(
+                    '${percentage.round()}% da renda',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            'R\$ ${value.toStringAsFixed(2)}',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTotalBudgetSection() {
     return AppCard(
       child: Column(
@@ -153,34 +456,103 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
           ),
           const SizedBox(height: AppSpacing.xs),
           Obx(() {
-            final income = controller.monthlyIncome.value;
+            final availableForExpenses = controller.availableBudgetForExpenses;
             final budget = controller.totalBudget.value;
-            if (income > 0 && budget > 0) {
-              final percentage = (budget / income * 100).round();
-              final remaining = income - budget;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$percentage% da sua renda',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: percentage > 80 ? AppColors.error : AppColors.success,
-                      fontWeight: FontWeight.w600,
+            final investmentGoal = controller.monthlyInvestmentGoal.value;
+            
+            if (availableForExpenses <= 0) {
+              return Text(
+                'Defina sua renda e meta de investimento primeiro',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              );
+            }
+            
+            final isOverLimit = controller.isBudgetOverLimit;
+            final margin = controller.remainingMargin;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Limite disponível
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: isOverLimit 
+                        ? AppColors.error.withOpacity(0.1) 
+                        : AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isOverLimit 
+                          ? AppColors.error.withOpacity(0.3) 
+                          : AppColors.success.withOpacity(0.3),
                     ),
                   ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isOverLimit ? Icons.warning : Icons.check_circle,
+                        color: isOverLimit ? AppColors.error : AppColors.success,
+                        size: 18,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isOverLimit
+                                  ? 'Orçamento acima do limite!'
+                                  : 'Orçamento dentro do limite',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isOverLimit ? AppColors.error : AppColors.success,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              isOverLimit
+                                  ? 'Excedente: R\$ ${(-margin).toStringAsFixed(2)}'
+                                  : 'Margem disponível: R\$ ${margin.toStringAsFixed(2)}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isOverLimit ? AppColors.error : AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                if (investmentGoal > 0 && budget > 0) ...[
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Sobrarão R\$ ${remaining.toStringAsFixed(2)} para poupança/investimentos',
+                    'Limite: R\$ ${availableForExpenses.toStringAsFixed(2)} (renda - investimento)',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
                 ],
-              );
-            }
-            return const SizedBox.shrink();
+              ],
+            );
           }),
         ],
       ),
+    );
+  }
+
+  Widget _buildCategorySelectorSection() {
+    return AppCard(
+      child: Obx(() => CategorySelectorWidget(
+        availableCategories: controller.availableCategories,
+        selectedCategories: controller.selectedCategoriesList,
+        onCategoryToggle: controller.toggleCategorySelection,
+        onAddCategory: () {
+          _navigateToAddCategory();
+        },
+        onInitializeDefaults: controller.forceInitializeDefaultCategories,
+      )),
     );
   }
 
@@ -197,14 +569,14 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.category,
+                Icons.calculate,
                 color: AppColors.accent,
                 size: 20,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Orçamento por Categoria',
+              'Definir Orçamentos',
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textDark,
               ),
@@ -213,22 +585,20 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'Defina quanto você planeja gastar em cada categoria',
+          'Defina quanto você planeja gastar em cada categoria selecionada',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         Obx(() {
-          final categories = controller.categories;
-          if (categories.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            );
+          final selectedCategories = controller.selectedCategoriesList;
+          if (selectedCategories.isEmpty) {
+            return const SizedBox.shrink();
           }
 
           return Column(
-            children: categories.map((category) => _buildCategoryBudgetItem(category)).toList(),
+            children: selectedCategories.map((category) => _buildCategoryBudgetItem(category)).toList(),
           );
         }),
       ],
@@ -252,10 +622,7 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    IconData(
-                      int.parse(category.icon.replaceAll('Icons.', '').split('.')[0], radix: 16),
-                      fontFamily: 'MaterialIcons',
-                    ),
+                    category.iconData,
                     color: category.color,
                     size: 20,
                   ),
@@ -403,5 +770,83 @@ class FinancialGoalsPage extends GetView<FinancialGoalsController> {
         icon: Icons.save,
       );
     });
+  }
+
+  Widget _buildGoalsSummarySection() {
+    return Obx(() {
+      final goals = controller.currentMonthGoals;
+      
+      if (goals.isEmpty) {
+        return AppCard(
+          child: Column(
+            children: [
+              Icon(
+                Icons.track_changes,
+                size: 48,
+                color: AppColors.textSecondary.withOpacity(0.5),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Nenhuma meta configurada',
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Configure sua renda e orçamento para criar suas metas financeiras',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
+      return GoalsSummaryWidget(
+        goals: goals,
+        onTap: () {
+          // Opcional: navegar para uma tela detalhada das metas
+          Get.snackbar(
+            'Metas Financeiras',
+            'Suas metas estão sendo exibidas abaixo',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.primary,
+            colorText: Colors.white,
+          );
+        },
+      );
+    });
+  }
+
+  void _navigateToAddCategory() async {
+    try {
+      // Navegar para a página de adicionar categoria
+      final result = await Get.toNamed('/add-category');
+      
+      // Se uma categoria foi adicionada, recarregar a lista
+      if (result == true) {
+        await controller.loadCategories();
+        Get.snackbar(
+          'Sucesso',
+          'Categoria adicionada com sucesso!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.success,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      // Se a rota não existir, mostrar mensagem alternativa
+      Get.snackbar(
+        'Adicionar Categoria',
+        'Acesse o menu Categorias para adicionar uma nova categoria',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.primary,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 }

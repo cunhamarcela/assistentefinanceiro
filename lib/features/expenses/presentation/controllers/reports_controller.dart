@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/insight_report.dart';
 import '../../domain/usecases/generate_insight_report_usecase.dart';
-import '../../../chat/domain/entities/financial_insight.dart';
+import '../../domain/entities/financial_insight.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/data/services/auth_service.dart';
@@ -104,6 +104,9 @@ class ReportsController extends GetxController {
       if (!reports.any((r) => r.id == report.id)) {
         reports.add(report);
       }
+      
+      // Gerar insights após criar o relatório
+      await loadInsights();
     } catch (e) {
       print('❌ Erro ao gerar relatório padrão: $e');
       // Cria relatório vazio para evitar erros de UI
@@ -114,11 +117,36 @@ class ReportsController extends GetxController {
   /// Carrega insights financeiros
   Future<void> loadInsights() async {
     try {
-      // TODO: Implementar carregamento de insights reais
-      // Por enquanto, cria alguns insights de exemplo
-      _createSampleInsights();
+      final userId = _currentUserId;
+      if (userId == null) {
+        print('❌ Usuário não autenticado para carregar insights');
+        insights.clear();
+        return;
+      }
+
+      print('🔍 Carregando insights para usuário: $userId');
+
+      // Gerar insights baseados nos dados reais do relatório atual
+      final report = currentReport.value;
+      if (report != null) {
+        print('📊 Relatório disponível: ${report.title}');
+        print('📊 Dados do gráfico: ${report.chartData.length} itens');
+        print('📊 Total gasto: ${report.summary['total_amount']}');
+        
+        final generatedInsights = await _generateInsightsFromReport(report);
+        insights.value = generatedInsights;
+        
+        print('💡 ${generatedInsights.length} insights gerados');
+        for (final insight in generatedInsights) {
+          print('💡 - ${insight.title}');
+        }
+      } else {
+        print('⚠️ Nenhum relatório disponível para gerar insights');
+        insights.clear();
+      }
     } catch (e) {
-      print('Erro ao carregar insights: $e');
+      print('❌ Erro ao carregar insights: $e');
+      insights.clear();
     }
   }
 
@@ -310,13 +338,13 @@ class ReportsController extends GetxController {
 
   /// Manipula ação do insight
   Future<void> handleInsightAction(FinancialInsight insight) async {
-    if (!insight.hasAction) return;
+    if (insight.actionSuggestions.isEmpty) return;
 
     try {
       // TODO: Implementar navegação baseada na ação
       Get.snackbar(
         'Ação',
-        'Executando: ${insight.actionText}',
+        'Executando: ${insight.actionSuggestions.first}',
         snackPosition: SnackPosition.BOTTOM,
       );
 
@@ -326,7 +354,7 @@ class ReportsController extends GetxController {
         properties: {
           'insight_id': insight.id,
           'insight_type': insight.type.name,
-          'action': insight.actionText,
+          'action': insight.actionSuggestions.first,
         },
       );
     } catch (e) {
@@ -354,7 +382,7 @@ class ReportsController extends GetxController {
   List<ChartPoint> get categoryChartData {
     final report = currentReport.value;
     if (report == null || report.type != InsightReportType.categorySpending) {
-      return _getSampleCategoryData();
+      return [];
     }
     return report.chartData;
   }
@@ -363,7 +391,7 @@ class ReportsController extends GetxController {
   List<ChartPoint> get trendChartData {
     final report = currentReport.value;
     if (report == null || report.type != InsightReportType.spendingTrend) {
-      return _getSampleTrendData();
+      return [];
     }
     return report.chartData;
   }
@@ -372,7 +400,7 @@ class ReportsController extends GetxController {
   List<ChartPoint> get comparisonChartData {
     final report = currentReport.value;
     if (report == null || report.type != InsightReportType.monthlyComparison) {
-      return _getSampleComparisonData();
+      return [];
     }
     return report.chartData;
   }
@@ -409,60 +437,112 @@ class ReportsController extends GetxController {
     );
   }
 
-  /// Cria insights de exemplo
-  void _createSampleInsights() {
-    insights.value = [
-      FinancialInsight.excessiveSpending(
-        amount: 1200.0,
-        category: 'Alimentação',
-        averageAmount: 800.0,
-        period: 'este mês',
-      ),
-      FinancialInsight.savingsOpportunity(
-        category: 'Transporte',
-        potentialSavings: 150.0,
-        suggestion: 'Considere usar transporte público.',
-      ),
-      FinancialInsight.goalProgress(
-        goalName: 'Reserva de Emergência',
-        currentAmount: 2500.0,
-        targetAmount: 5000.0,
-        isOnTrack: true,
-      ),
-    ];
-  }
-
-  /// Dados de exemplo para gráfico de categorias
-  List<ChartPoint> _getSampleCategoryData() {
-    return [
-      const ChartPoint(label: 'Alimentação', value: 800.0),
-      const ChartPoint(label: 'Transporte', value: 400.0),
-      const ChartPoint(label: 'Lazer', value: 300.0),
-      const ChartPoint(label: 'Saúde', value: 200.0),
-      const ChartPoint(label: 'Outros', value: 150.0),
-    ];
-  }
-
-  /// Dados de exemplo para gráfico de tendência
-  List<ChartPoint> _getSampleTrendData() {
-    return [
-      const ChartPoint(label: 'Sem 1', value: 400.0),
-      const ChartPoint(label: 'Sem 2', value: 600.0),
-      const ChartPoint(label: 'Sem 3', value: 500.0),
-      const ChartPoint(label: 'Sem 4', value: 700.0),
-    ];
-  }
-
-  /// Dados de exemplo para gráfico de comparação
-  List<ChartPoint> _getSampleComparisonData() {
-    return [
-      const ChartPoint(label: 'Jan', value: 1500.0),
-      const ChartPoint(label: 'Fev', value: 1200.0),
-      const ChartPoint(label: 'Mar', value: 1800.0),
-      const ChartPoint(label: 'Abr', value: 1600.0),
-      const ChartPoint(label: 'Mai', value: 1400.0),
-      const ChartPoint(label: 'Jun', value: 1850.0),
-    ];
+  /// Gera insights baseados no relatório atual
+  Future<List<FinancialInsight>> _generateInsightsFromReport(InsightReport report) async {
+    try {
+      final insights = <FinancialInsight>[];
+      final totalSpent = report.summary['total_amount'] as double? ?? 0.0;
+      final transactionCount = report.summary['transaction_count'] as int? ?? 0;
+      
+      print('🔍 Analisando relatório para insights:');
+      print('   - Total gasto: R\$ ${totalSpent.toStringAsFixed(2)}');
+      print('   - Transações: $transactionCount');
+      print('   - Categorias: ${report.chartData.length}');
+      
+      // Insight básico sobre total de gastos
+      if (totalSpent > 0) {
+        insights.add(FinancialInsight(
+          id: 'total_spending_${DateTime.now().millisecondsSinceEpoch}',
+          type: FinancialInsightType.categoryAnalysis,
+          priority: FinancialInsightPriority.medium,
+          title: 'Resumo dos Gastos 📊',
+          description: 'Você gastou R\$ ${totalSpent.toStringAsFixed(2)} no período analisado, com um total de $transactionCount transações.',
+          data: {
+            'total_amount': totalSpent,
+            'transaction_count': transactionCount,
+            'average_per_transaction': transactionCount > 0 ? totalSpent / transactionCount : 0.0,
+          },
+          actionSuggestions: [
+            'Monitore seus gastos regularmente',
+            'Considere definir metas de orçamento',
+            'Analise os padrões de gastos por categoria',
+          ],
+          createdAt: DateTime.now(),
+          isRead: false,
+        ));
+      }
+      
+      // Analisar gastos por categoria
+      if (report.chartData.isNotEmpty && totalSpent > 0) {
+        final topCategory = report.chartData.first;
+        final percentage = (topCategory.value / totalSpent) * 100;
+        
+        if (percentage > 60) { // Mais de 60% em uma categoria
+          insights.add(FinancialInsight(
+            id: 'excessive_spending_${DateTime.now().millisecondsSinceEpoch}',
+            type: FinancialInsightType.budgetWarning,
+            priority: FinancialInsightPriority.high,
+            title: 'Concentração de Gastos: ${topCategory.label} ⚠️',
+            description: 'Você gastou R\$ ${topCategory.value.toStringAsFixed(2)} em ${topCategory.label}, que representa ${percentage.round()}% do total. Considere diversificar seus gastos.',
+            data: {
+              'amount': topCategory.value,
+              'category': topCategory.label,
+              'percentage': percentage,
+              'ideal_percentage': 40.0,
+            },
+            actionSuggestions: ['Revisar Gastos', 'Definir Limite'],
+            createdAt: DateTime.now(),
+            isRead: false,
+          ));
+        }
+      }
+      
+      // Analisar tendência de gastos
+      if (report.type == InsightReportType.spendingTrend) {
+        final trend = report.summary['trend'] as double? ?? 0.0;
+        if (trend > 0) {
+          insights.add(FinancialInsight(
+            id: 'trend_alert_${DateTime.now().millisecondsSinceEpoch}',
+            type: FinancialInsightType.spendingPattern,
+            priority: FinancialInsightPriority.medium,
+            title: 'Tendência de Aumento nos Gastos 📈',
+            description: 'Seus gastos aumentaram R\$ ${trend.toStringAsFixed(2)} nas últimas semanas. Fique atento para não sair do orçamento!',
+            data: {'trend_type': 'increasing', 'amount': trend, 'period': 'últimas semanas'},
+            actionSuggestions: ['Revisar Gastos', 'Ajustar Orçamento'],
+            createdAt: DateTime.now(),
+            isRead: false,
+          ));
+        }
+      }
+      
+      // Sugerir oportunidades de economia
+      if (report.chartData.length > 1) {
+        final secondCategory = report.chartData[1];
+        if (secondCategory.value > 200.0) { // Valor significativo
+          insights.add(FinancialInsight(
+            id: 'savings_opportunity_${DateTime.now().millisecondsSinceEpoch}',
+            type: FinancialInsightType.savingsOpportunity,
+            priority: FinancialInsightPriority.medium,
+            title: 'Oportunidade de Economia em ${secondCategory.label} 💡',
+            description: 'Analise seus gastos em ${secondCategory.label} para encontrar oportunidades de economia. Você poderia economizar até R\$ ${(secondCategory.value * 0.15).toStringAsFixed(2)}.',
+            data: {
+              'category': secondCategory.label,
+              'current_amount': secondCategory.value,
+              'potential_savings': secondCategory.value * 0.15,
+              'savings_percentage': 15.0,
+            },
+            actionSuggestions: ['Analisar Gastos', 'Definir Meta'],
+            createdAt: DateTime.now(),
+            isRead: false,
+          ));
+        }
+      }
+      
+      return insights;
+    } catch (e) {
+      print('❌ Erro ao gerar insights do relatório: $e');
+      return [];
+    }
   }
 
   /// Mostra erro

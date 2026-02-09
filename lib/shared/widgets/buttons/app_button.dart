@@ -125,22 +125,26 @@ class AppButton extends StatelessWidget {
   }
 
   Widget _buildButtonContent() {
+    final buttonColor = color ?? AppColors.primary;
+    final effectiveTextColor = _getTextColor(buttonColor);
+    final effectiveStyle = _getTextStyle().copyWith(color: effectiveTextColor);
+    
     if (icon != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: _getIconSize()),
+          Icon(icon, size: _getIconSize(), color: effectiveTextColor),
           const SizedBox(width: AppSpacing.sm),
-          Text(text, style: _getTextStyle()),
+          Text(text, style: effectiveStyle),
         ],
       );
     }
-    return Text(text, style: _getTextStyle());
+    return Text(text, style: effectiveStyle);
   }
 
   Color _getTextColor(Color buttonColor) {
     if (textColor != null) return textColor!;
-    return filled ? Colors.white : buttonColor;
+    return filled ? AppColors.colorTextOnDark : buttonColor;
   }
 
   TextStyle _getTextStyle() {

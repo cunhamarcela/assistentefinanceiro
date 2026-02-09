@@ -1,53 +1,99 @@
 import 'package:flutter/material.dart';
 
 /// Paleta de cores do aplicativo Assistente Financeiro
+/// Atualizada com Design Tokens Semânticos
 class AppColors {
+  // ---------------------------------------------------------------------------
+  // DESIGN TOKENS (Nova Paleta)
+  // ---------------------------------------------------------------------------
+
+  // Brand
+  static const Color colorBrandPrimary = Color(0xFF1A3D63); // Navy
+  static const Color colorBrandDark = Color(0xFF0A1931);    // Navy Dark
+  static const Color colorBrandSoft = Color(0xFF4A7FA7);    // Blue Medium
+
+  // Backgrounds
+  static const Color colorBackgroundPrimary = Color(0xFFF6FAFD);
+  static const Color colorBackgroundSecondary = Color(0xFFB3CFE5);
+
+  // Surfaces
+  static const Color colorSurfaceCard = Color(0xFFFFFFFF);
+  static const Color colorSurfaceElevated = Color(0xFFFFFFFF);
+
+  // Text
+  static const Color colorTextPrimary = Color(0xFF0A1931); // Navy Dark
+  static const Color colorTextSecondary = Color(0xFF1A3D63); // Navy
+  static const Color colorTextMuted = Color(0xFF4A7FA7); // Blue Medium
+  static const Color colorTextOnDark = Color(0xFFF6FAFD); // Light
+
+  // Actions
+  static const Color colorActionPrimary = Color(0xFF3CB371); // Green Success (CTA)
+  static const Color colorActionSecondary = Color(0xFF4A7FA7);
+  static const Color colorActionDisabled = Color(0xFFB3CFE5);
+
+  // States
+  static const Color colorSuccess = Color(0xFF3CB371);
+  static const Color colorWarning = Color(0xFFE9C46A);
+  static const Color colorError = Color(0xFFE76F51);
+  static const Color colorInfo = Color(0xFF4A7FA7);
+
+  // Borders
+  static const Color colorBorderSubtle = Color(0xFFB3CFE5);
+  static const Color colorBorderStrong = Color(0xFF4A7FA7);
+
+  // ---------------------------------------------------------------------------
+  // COMPATIBILIDADE (Mapeamento para uso legado)
+  // ---------------------------------------------------------------------------
+
   // Cores principais
-  static const Color primary = Color(0xFF6A4DFF);     // Roxo principal
-  static const Color secondary = Color(0xFF1C1C1E);   // Fundo escuro
-  static const Color accent = Color(0xFFFFC542);      // Amarelo de destaque
-  static const Color blue = Color(0xFF0052CC);        // Azul Monarch
+  static const Color primary = colorBrandPrimary;
+  static const Color secondary = colorBrandDark;
+  static const Color accent = colorActionPrimary; // CTA principal
+  static const Color blue = colorBrandSoft;
   
-  // Paleta Roxo/Lilás/Cinza
-  static const Color purple = Color(0xFF6A4DFF);      // Roxo principal
-  static const Color purpleLight = Color(0xFF8B5FFF); // Roxo claro
-  static const Color purpleDark = Color(0xFF5A3DFF);  // Roxo escuro
-  static const Color lilac = Color(0xFFB794F6);       // Lilás
-  static const Color lilacLight = Color(0xFFD6BCFA);  // Lilás claro
-  static const Color grayDark = Color(0xFF2D3748);    // Cinza escuro
-  static const Color grayMedium = Color(0xFF4A5568);  // Cinza médio
-  static const Color grayLight = Color(0xFF718096);   // Cinza claro
-  static const Color grayVeryLight = Color(0xFFF7FAFC); // Cinza muito claro
+  // Paleta Antiga (Mapeada)
+  static const Color purple = colorBrandPrimary;
+  static const Color purpleLight = colorBrandSoft;
+  static const Color purpleDark = colorBrandDark;
+  static const Color lilac = colorBrandSoft;
+  static const Color lilacLight = colorBackgroundSecondary;
+  static const Color grayDark = colorTextSecondary; 
+  static const Color grayMedium = colorTextMuted;
+  static const Color grayLight = colorBorderSubtle;
+  static const Color grayVeryLight = colorBackgroundSecondary;
   
   // Superfícies
-  static const Color surface = Color(0xFFF5F5F7);     // Superfície clara
-  static const Color background = Color(0xFFFFFFFF);   // Fundo branco
-  static const Color card = Color(0xFFF5F5F7);        // Cor dos cards
+  static const Color surface = colorSurfaceCard; 
+  static const Color background = colorBackgroundPrimary; 
+  static const Color card = colorSurfaceCard;
   
-  // Texto
-  static const Color textPrimary = Colors.white;      // Texto principal
-  static const Color textSecondary = Color(0xFF8E8E93); // Texto secundário
-  static const Color textDark = Color(0xFF1C1C1E);    // Texto escuro
+  // Texto (Mapeamento para manter compatibilidade com nomes antigos)
+  // textPrimary antigo era Branco. Novo textOnDark é o equivalente.
+  static const Color textPrimary = colorTextOnDark; 
+  // textDark antigo era Preto. Novo textPrimary é o equivalente.
+  static const Color textDark = colorTextPrimary;
+  // textSecondary antigo era Cinza. Novo textMuted é o equivalente.
+  static const Color textSecondary = colorTextMuted;
   
   // Estados
-  static const Color success = Color(0xFF34C759);     // Verde sucesso
-  static const Color warning = Color(0xFFFF9500);     // Laranja aviso
-  static const Color error = Color(0xFFFF3B30);       // Vermelho erro
-  static const Color info = Color(0xFF007AFF);        // Azul informação
+  static const Color success = colorSuccess;
+  static const Color warning = colorWarning;
+  static const Color error = colorError;
+  static const Color info = colorInfo;
   
   // Transparências
-  static const Color overlay = Color(0x80000000);     // Overlay escuro
-  static const Color divider = Color(0xFFE5E5EA);     // Divisor
+  static const Color overlay = Color(0x800A1931);
+  static const Color divider = colorBorderSubtle;
   
   // Gradientes
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF6A4DFF), Color(0xFF8B5FFF)],
+    colors: [colorBrandDark, colorBrandPrimary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   
   static const LinearGradient accentGradient = LinearGradient(
-    colors: [Color(0xFFFFC542), Color(0xFFFFD700)],
+    colors: [colorActionPrimary, colorBrandSoft],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

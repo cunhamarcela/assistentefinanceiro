@@ -109,3 +109,10 @@ flutter logs | grep -i apple
 **Resumo**: O Apple Sign-In está implementado corretamente no código, mas requer configuração externa no Firebase e Apple Developer Console para funcionar completamente.
 
 
+
+
+
+
+
+
+

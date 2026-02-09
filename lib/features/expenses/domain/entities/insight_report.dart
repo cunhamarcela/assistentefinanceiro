@@ -360,3 +360,4 @@ enum InsightRecommendationPriority {
   high,
   critical,
 }
+

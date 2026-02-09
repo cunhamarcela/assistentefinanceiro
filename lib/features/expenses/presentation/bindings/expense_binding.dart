@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import '../../../../core/services/ads_service.dart';
+import '../../../../core/services/financial_context_service.dart';
 import '../../data/datasources/expense_local_datasource.dart';
 import '../../data/datasources/expense_firestore_datasource.dart';
 import '../../data/repositories/expense_hybrid_repository.dart';
@@ -82,6 +84,14 @@ class ExpenseBinding extends Bindings {
       () => FinancialInsightsService(),
     );
 
+    // Serviço de contexto financeiro (integração IA ↔ Metas ↔ Relatórios)
+    if (!Get.isRegistered<FinancialContextService>()) {
+      Get.lazyPut<FinancialContextService>(
+        () => FinancialContextService(),
+        fenix: true, // Recria se necessário
+      );
+    }
+
     // Controllers
     Get.lazyPut<ExpenseController>(
       () => ExpenseController(
@@ -102,5 +112,20 @@ class ExpenseBinding extends Bindings {
     Get.lazyPut<EnhancedReportsController>(
       () => EnhancedReportsController(),
     );
+
+    // Pré-carrega o interstitial quando a home é inicializada
+    _preloadInterstitialAd();
+  }
+
+  /// Pré-carrega o anúncio intersticial para exibição posterior
+  void _preloadInterstitialAd() {
+    try {
+      if (Get.isRegistered<AdsService>()) {
+        final adsService = Get.find<AdsService>();
+        adsService.loadInterstitial();
+      }
+    } catch (e) {
+      // Ignora erros silenciosamente - não é crítico
+    }
   }
 }

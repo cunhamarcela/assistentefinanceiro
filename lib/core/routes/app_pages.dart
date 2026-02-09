@@ -7,8 +7,8 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/email_verification_page.dart';
-import '../../features/onboarding/presentation/pages/onboarding_page.dart';
-import '../../features/onboarding/presentation/bindings/onboarding_binding.dart';
+import '../../features/onboarding/presentation/pages/welcome_page.dart';
+import '../../features/onboarding/presentation/bindings/welcome_binding.dart';
 import '../../features/expenses/presentation/bindings/expense_binding.dart';
 import '../../features/expenses/presentation/pages/home_page.dart';
 import '../../features/expenses/presentation/pages/expenses_page.dart';
@@ -27,14 +27,26 @@ import '../../features/expenses/presentation/pages/reports_page.dart';
 import '../../features/expenses/presentation/pages/enhanced_reports_page.dart';
 import '../../features/expenses/presentation/bindings/reports_binding.dart';
 import '../../features/expenses/presentation/pages/financial_goals_page.dart';
+import '../../features/expenses/presentation/bindings/financial_goals_binding.dart';
+import '../../features/expenses/presentation/pages/multi_period_comparison_page.dart';
+import '../../features/expenses/presentation/bindings/comparison_binding.dart';
+import '../../features/expenses/presentation/pages/credit_cards_page.dart';
+import '../../features/expenses/presentation/pages/add_credit_card_page.dart';
+import '../../features/expenses/presentation/bindings/credit_card_binding.dart';
+import '../../features/income/presentation/pages/income_list_page.dart';
+import '../../features/income/presentation/pages/add_income_page.dart';
+import '../../features/income/presentation/bindings/income_binding.dart';
+import '../../features/expenses/presentation/pages/quick_financial_summary_page.dart';
+import '../../features/investments/presentation/pages/investments_page.dart';
+import '../../features/investments/presentation/bindings/investment_binding.dart';
 
 class AppPages {
   static final routes = [
-    // Onboarding Route
+    // Onboarding Route - Tela de Welcome (primeira vez)
     GetPage(
       name: AppRoutes.onboarding,
-      page: () => const OnboardingPage(),
-      binding: OnboardingBinding(),
+      page: () => const WelcomePage(),
+      binding: WelcomeBinding(),
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
     ),
@@ -146,6 +158,36 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
     ),
     
+    // Credit Cards
+    GetPage(
+      name: AppRoutes.creditCards,
+      page: () => const CreditCardsPage(),
+      binding: CreditCardBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Add Credit Card
+    GetPage(
+      name: AppRoutes.addCreditCard,
+      page: () => const AddCreditCardPage(),
+      binding: CreditCardBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.downToUp,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Edit Credit Card
+    GetPage(
+      name: AppRoutes.editCreditCard,
+      page: () => const AddCreditCardPage(), // Mesma página, modo edição
+      binding: CreditCardBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
     // Chat IA
     GetPage(
       name: AppRoutes.chat,
@@ -156,21 +198,31 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
     ),
     
-    // Relatórios
+    // Relatórios Aprimorados (Nova Tela)
     GetPage(
       name: AppRoutes.reports,
       page: () => const EnhancedReportsPage(),
-      binding: ExpenseBinding(),
+      binding: ReportsBinding(),
       middlewares: [MiddlewareFactory.auth()],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
     ),
     
-    // Analytics (placeholder - agora redirecionando para relatórios aprimorados)
+    // Quick Summary - Resumo Financeiro em 1 Tela
+    GetPage(
+      name: AppRoutes.quickSummary,
+      page: () => const QuickFinancialSummaryPage(),
+      binding: ReportsBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Analytics (agora usando EnhancedReportsPage)
     GetPage(
       name: AppRoutes.analytics,
       page: () => const EnhancedReportsPage(),
-      binding: ExpenseBinding(),
+      binding: ReportsBinding(),
       middlewares: [MiddlewareFactory.auth()],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
@@ -219,7 +271,48 @@ class AppPages {
     GetPage(
       name: AppRoutes.financialGoals,
       page: () => const FinancialGoalsPage(),
-      binding: ExpenseBinding(),
+      binding: FinancialGoalsBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Premium Features - Multi-Period Comparison
+    GetPage(
+      name: AppRoutes.multiPeriodComparison,
+      page: () => const MultiPeriodComparisonPage(),
+      binding: ComparisonBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    
+    // Income (Receitas)
+    GetPage(
+      name: AppRoutes.incomes,
+      page: () => const IncomeListPage(),
+      binding: IncomeBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Add Income
+    GetPage(
+      name: AppRoutes.addIncome,
+      page: () => const AddIncomePage(),
+      binding: IncomeBinding(),
+      middlewares: [MiddlewareFactory.auth()],
+      transition: Transition.downToUp,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    
+    // Investments
+    GetPage(
+      name: AppRoutes.investments,
+      page: () => const InvestmentsPage(),
+      binding: InvestmentBinding(),
       middlewares: [MiddlewareFactory.auth()],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),

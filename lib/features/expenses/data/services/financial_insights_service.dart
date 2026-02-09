@@ -166,8 +166,8 @@ class FinancialInsightsService extends GetxService {
       
       if (budgetAmount > 0 && spentAmount < budgetAmount * 0.5) {
         final savingsAmount = budgetAmount - spentAmount;
-        final category = categories.firstWhereOrNull((c) => c.id == categoryId);
-        final categoryName = category?.name ?? 'Categoria';
+        final category = _findCategoryById(categoryId, categories);
+        final categoryName = category?.name ?? _getCategoryNameFromId(categoryId);
 
         insights.add(FinancialInsight(
           id: 'savings_opportunity_${categoryId}',
@@ -256,8 +256,8 @@ class FinancialInsightsService extends GetxService {
         final changePercentage = ((currentAmount - previousAmount) / previousAmount * 100).round();
         
         if (changePercentage.abs() >= 30) { // Mudança significativa
-          final category = categories.firstWhereOrNull((c) => c.id == categoryId);
-          final categoryName = category?.name ?? 'Categoria';
+          final category = _findCategoryById(categoryId, categories);
+          final categoryName = category?.name ?? _getCategoryNameFromId(categoryId);
           final isIncrease = changePercentage > 0;
 
           insights.add(FinancialInsight(
@@ -363,5 +363,75 @@ class FinancialInsightsService extends GetxService {
       case FinancialInsightPriority.low:
         return 1;
     }
+  }
+  
+  /// Busca categoria por ID com fallback para IDs sem sufixo do usuário
+  ExpenseCategory? _findCategoryById(String categoryId, List<ExpenseCategory> categories) {
+    if (categoryId.isEmpty || categories.isEmpty) return null;
+    
+    // 1. Tentar match exato
+    final exactMatch = categories.firstWhereOrNull((cat) => cat.id == categoryId);
+    if (exactMatch != null) return exactMatch;
+    
+    // 2. Tentar match onde o ID da categoria começa com o categoryId buscado
+    final startsWithMatch = categories.firstWhereOrNull(
+      (cat) => cat.id.startsWith('${categoryId}_')
+    );
+    if (startsWithMatch != null) return startsWithMatch;
+    
+    // 3. Tentar match onde o categoryId começa com o ID base da categoria
+    final reverseMatch = categories.firstWhereOrNull(
+      (cat) => categoryId.startsWith('${cat.id}_')
+    );
+    if (reverseMatch != null) return reverseMatch;
+    
+    // 4. Extrair ID base e tentar match
+    final baseId = _extractBaseCategoryId(categoryId);
+    if (baseId != categoryId) {
+      return categories.firstWhereOrNull(
+        (cat) => cat.id == baseId || 
+                 cat.id.startsWith('${baseId}_') ||
+                 _extractBaseCategoryId(cat.id) == baseId
+      );
+    }
+    
+    return null;
+  }
+  
+  /// Extrai o ID base de uma categoria removendo o sufixo do usuário
+  String _extractBaseCategoryId(String categoryId) {
+    final defaultIds = [
+      'alimentacao', 'transporte', 'saude', 'contas', 'lazer',
+      'casa', 'educacao', 'roupas', 'tecnologia', 'pets', 'outros', 'investimentos'
+    ];
+    
+    for (final baseId in defaultIds) {
+      if (categoryId == baseId || categoryId.startsWith('${baseId}_')) {
+        return baseId;
+      }
+    }
+    return categoryId;
+  }
+  
+  /// Obtém o nome da categoria a partir do ID base
+  String _getCategoryNameFromId(String categoryId) {
+    final baseId = _extractBaseCategoryId(categoryId);
+    
+    final categoryNames = {
+      'alimentacao': 'Alimentação',
+      'transporte': 'Transporte',
+      'saude': 'Saúde',
+      'contas': 'Contas',
+      'lazer': 'Lazer',
+      'casa': 'Casa',
+      'educacao': 'Educação',
+      'roupas': 'Roupas e Beleza',
+      'tecnologia': 'Tecnologia',
+      'pets': 'Pets',
+      'outros': 'Outros',
+      'investimentos': 'Investimentos',
+    };
+    
+    return categoryNames[baseId] ?? 'Categoria';
   }
 }

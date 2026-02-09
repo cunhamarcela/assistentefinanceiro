@@ -19,7 +19,7 @@ class HomePage extends GetView<ExpenseController> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text('Assistente Financeiro', style: AppTextStyles.headline2),
+        title: Text('Assistente Financeiro', style: AppTextStyles.headline2.copyWith(color: AppColors.colorTextOnDark)),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -104,6 +104,7 @@ class HomePage extends GetView<ExpenseController> {
             style: AppTextStyles.headline3Dark,
           ),
           const SizedBox(height: AppSpacing.sm),
+          // Linha 1: Adicionar Gasto e Ver Todas
           Row(
             children: [
               Expanded(
@@ -126,6 +127,53 @@ class HomePage extends GetView<ExpenseController> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          // Linha 2: Receitas e Chat IA (NOVAS)
+          Row(
+            children: [
+              Expanded(
+                child: HomeCard(
+                  icon: Icons.account_balance_wallet,
+                  title: 'Receitas',
+                  iconColor: AppColors.colorSuccess,
+                  onTap: () => Get.toNamed(AppRoutes.incomes),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: HomeCard(
+                  icon: Icons.smart_toy,
+                  title: 'Chat IA',
+                  iconColor: AppColors.colorBrandSoft,
+                  onTap: () => Get.toNamed(AppRoutes.chat),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Linha 3: Cartões de Crédito e Categorias
+          Row(
+            children: [
+              Expanded(
+                child: HomeCard(
+                  icon: Icons.credit_card,
+                  title: 'Cartões',
+                  iconColor: AppColors.colorBrandPrimary,
+                  onTap: () => Get.toNamed(AppRoutes.creditCards),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: HomeCard(
+                  icon: Icons.category,
+                  title: 'Categorias',
+                  iconColor: AppColors.accent,
+                  onTap: () => Get.toNamed(AppRoutes.categories),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Linha 4: Relatórios e Metas
           Row(
             children: [
               Expanded(
@@ -148,26 +196,24 @@ class HomePage extends GetView<ExpenseController> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          // Linha 5: Investimentos e Comparações
           Row(
             children: [
               Expanded(
                 child: HomeCard(
-                  icon: Icons.today,
-                  title: 'Hoje',
-                  iconColor: AppColors.warning,
-                  onTap: () {
-                    controller.loadTodayExpenses();
-                    Get.toNamed(AppRoutes.expenses);
-                  },
+                  icon: Icons.show_chart,
+                  title: 'Investimentos',
+                  iconColor: AppColors.colorSuccess,
+                  onTap: () => Get.toNamed(AppRoutes.investments),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HomeCard(
-                  icon: Icons.category,
-                  title: 'Categorias',
-                  iconColor: AppColors.accent,
-                  onTap: () => Get.toNamed(AppRoutes.categories),
+                  icon: Icons.compare_arrows,
+                  title: 'Comparações',
+                  iconColor: AppColors.purple,
+                  onTap: () => Get.toNamed(AppRoutes.multiPeriodComparison),
                 ),
               ),
             ],
@@ -176,7 +222,6 @@ class HomePage extends GetView<ExpenseController> {
       ),
     );
   }
-
 
   Widget _buildRecentExpenses() {
     return Container(
@@ -267,10 +312,10 @@ class HomePage extends GetView<ExpenseController> {
             Get.toNamed(AppRoutes.expenses);
             break;
           case 2:
-            Get.toNamed(AppRoutes.addExpense);
+            Get.toNamed(AppRoutes.incomes);
             break;
           case 3:
-            Get.toNamed(AppRoutes.categories);
+            Get.toNamed(AppRoutes.chat);
             break;
           case 4:
             Get.toNamed(AppRoutes.analytics);
@@ -283,16 +328,16 @@ class HomePage extends GetView<ExpenseController> {
           label: 'Início',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.list),
+          icon: Icon(Icons.arrow_downward),
           label: 'Despesas',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.add_circle),
-          label: 'Adicionar',
+          icon: Icon(Icons.arrow_upward),
+          label: 'Receitas',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.category),
-          label: 'Categorias',
+          icon: Icon(Icons.smart_toy),
+          label: 'Chat IA',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.analytics),

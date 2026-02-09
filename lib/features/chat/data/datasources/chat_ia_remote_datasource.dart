@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import '../../domain/entities/chat_message.dart';
-import '../../domain/entities/financial_insight.dart';
+import '../../../expenses/domain/entities/financial_insight.dart';
 import '../../../auth/data/services/auth_service.dart';
+import '../../../onboarding/data/services/onboarding_service.dart';
+import '../../../../core/services/openai_service.dart';
 
 /// Interface para data source remoto do chat IA
 abstract class ChatIaRemoteDataSource {
@@ -20,9 +22,16 @@ abstract class ChatIaRemoteDataSource {
   Future<void> updateChatSettings(String userId, Map<String, dynamic> settings);
 }
 
-/// Implementação do data source remoto usando Firestore e IA simulada
+/// Implementação do data source remoto usando Firestore e OpenAI
 class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final OpenAIService _openAIService;
+  late final OnboardingService _onboardingService;
+
+  ChatIaRemoteDataSourceImpl() {
+    _openAIService = Get.find<OpenAIService>();
+    _onboardingService = Get.find<OnboardingService>();
+  }
 
   /// Obter userId atual
   String get _currentUserId {
@@ -53,59 +62,46 @@ class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
     Map<String, dynamic>? context,
   }) async {
     try {
-      // Simular delay de processamento da IA
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      final lastUserMessage = conversationHistory
-          .where((m) => m.isUser)
-          .lastOrNull;
-
-      if (lastUserMessage == null) {
-        throw Exception('Nenhuma mensagem do usuário encontrada');
+      final startTime = DateTime.now();
+      
+      // Tentar usar OpenAI primeiro
+      if (await _openAIService.isConfigured()) {
+        try {
+          final userProfile = await _onboardingService.getOnboardingProfile();
+          
+          // Converter histórico para formato OpenAI
+          final messages = conversationHistory.map((msg) => {
+            'role': msg.isUser ? 'user' : 'assistant',
+            'content': msg.content,
+          }).toList();
+          
+          final aiResponse = await _openAIService.generateChatResponse(
+            conversationHistory: messages,
+            userProfile: userProfile,
+            context: context,
+          );
+          
+          final processingTime = DateTime.now().difference(startTime).inMilliseconds;
+          
+          return ChatMessage.assistant(
+            content: aiResponse,
+            metadata: {
+              'type': 'openai_response',
+              'has_insight': true,
+              'processing_time_ms': processingTime,
+              'model': 'gpt-4o-mini',
+              'personalized': userProfile != null,
+            },
+            status: ChatMessageStatus.sent,
+          );
+        } catch (e) {
+          print('⚠️ Erro com OpenAI, usando fallback: $e');
+        }
       }
-
-      final userMessage = lastUserMessage.content.toLowerCase();
-      String response;
-      Map<String, dynamic> metadata = {
-        'type': 'ai_response',
-        'has_insight': false,
-        'processing_time_ms': 1500,
-      };
-
-      // Análise de intenção baseada em palavras-chave
-      if (_containsKeywords(userMessage, ['gasto', 'gastos', 'despesa', 'despesas', 'gastei'])) {
-        response = _generateExpenseResponse(userMessage);
-        metadata['intent'] = 'expense_analysis';
-        metadata['has_insight'] = true;
-        metadata['insight_type'] = 'expense_summary';
-      } else if (_containsKeywords(userMessage, ['relatório', 'relatorio', 'gráfico', 'grafico', 'análise', 'analise'])) {
-        response = _generateReportResponse(userMessage);
-        metadata['intent'] = 'report_request';
-        metadata['has_insight'] = true;
-        metadata['insight_type'] = 'report_generation';
-      } else if (_containsKeywords(userMessage, ['economia', 'economizar', 'poupar', 'dica', 'dicas'])) {
-        response = _generateSavingsResponse(userMessage);
-        metadata['intent'] = 'savings_advice';
-        metadata['has_insight'] = true;
-        metadata['insight_type'] = 'savings_opportunity';
-      } else if (_containsKeywords(userMessage, ['categoria', 'categorias', 'classificar', 'organizar'])) {
-        response = _generateCategoryResponse(userMessage);
-        metadata['intent'] = 'category_management';
-      } else if (_containsKeywords(userMessage, ['meta', 'metas', 'objetivo', 'objetivos', 'orçamento', 'orcamento'])) {
-        response = _generateGoalResponse(userMessage);
-        metadata['intent'] = 'goal_management';
-        metadata['has_insight'] = true;
-        metadata['insight_type'] = 'goal_progress';
-      } else {
-        response = _generateGeneralResponse(userMessage);
-        metadata['intent'] = 'general_conversation';
-      }
-
-      return ChatMessage.assistant(
-        content: response,
-        metadata: metadata,
-        status: ChatMessageStatus.sent,
-      );
+      
+      // Fallback para respostas locais
+      return await _generateLocalResponse(conversationHistory, context);
+      
     } catch (e) {
       print('❌ Erro ao gerar resposta do assistente: $e');
       
@@ -121,6 +117,66 @@ class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
         errorMessage: e.toString(),
       );
     }
+  }
+
+  /// Gera resposta local como fallback
+  Future<ChatMessage> _generateLocalResponse(
+    List<ChatMessage> conversationHistory,
+    Map<String, dynamic>? context,
+  ) async {
+    // Simular delay de processamento
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    final lastUserMessage = conversationHistory
+        .where((m) => m.isUser)
+        .lastOrNull;
+
+    if (lastUserMessage == null) {
+      throw Exception('Nenhuma mensagem do usuário encontrada');
+    }
+
+    final userMessage = lastUserMessage.content.toLowerCase();
+    String response;
+    Map<String, dynamic> metadata = {
+      'type': 'local_response',
+      'has_insight': false,
+      'processing_time_ms': 800,
+    };
+
+    // Análise de intenção baseada em palavras-chave
+    if (_containsKeywords(userMessage, ['gasto', 'gastos', 'despesa', 'despesas', 'gastei'])) {
+      response = _generateExpenseResponse(userMessage);
+      metadata['intent'] = 'expense_analysis';
+      metadata['has_insight'] = true;
+      metadata['insight_type'] = 'expense_summary';
+    } else if (_containsKeywords(userMessage, ['relatório', 'relatorio', 'gráfico', 'grafico', 'análise', 'analise'])) {
+      response = _generateReportResponse(userMessage);
+      metadata['intent'] = 'report_request';
+      metadata['has_insight'] = true;
+      metadata['insight_type'] = 'report_generation';
+    } else if (_containsKeywords(userMessage, ['economia', 'economizar', 'poupar', 'dica', 'dicas'])) {
+      response = _generateSavingsResponse(userMessage);
+      metadata['intent'] = 'savings_advice';
+      metadata['has_insight'] = true;
+      metadata['insight_type'] = 'savings_opportunity';
+    } else if (_containsKeywords(userMessage, ['categoria', 'categorias', 'classificar', 'organizar'])) {
+      response = _generateCategoryResponse(userMessage);
+      metadata['intent'] = 'category_management';
+    } else if (_containsKeywords(userMessage, ['meta', 'metas', 'objetivo', 'objetivos', 'orçamento', 'orcamento'])) {
+      response = _generateGoalResponse(userMessage);
+      metadata['intent'] = 'goal_management';
+      metadata['has_insight'] = true;
+      metadata['insight_type'] = 'goal_progress';
+    } else {
+      response = _generateGeneralResponse(userMessage);
+      metadata['intent'] = 'general_conversation';
+    }
+
+    return ChatMessage.assistant(
+      content: response,
+      metadata: metadata,
+      status: ChatMessageStatus.sent,
+    );
   }
 
   @override
@@ -184,26 +240,56 @@ class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
       final now = DateTime.now();
 
       // Insight de gastos excessivos (simulado)
-      insights.add(FinancialInsight.excessiveSpending(
-        amount: 1200.0,
-        category: 'Alimentação',
-        averageAmount: 800.0,
-        period: 'este mês',
+      insights.add(FinancialInsight(
+        id: 'excessive_spending_demo',
+        type: FinancialInsightType.budgetExceeded,
+        priority: FinancialInsightPriority.high,
+        title: 'Gasto Excessivo em Alimentação',
+        description: 'Você gastou R\$ 1.200,00 em alimentação este mês, R\$ 400,00 acima da média de R\$ 800,00.',
+        data: {
+          'amount': 1200.0,
+          'category': 'Alimentação',
+          'average': 800.0,
+          'period': 'este mês',
+        },
+        actionSuggestions: ['Revisar Gastos', 'Criar Orçamento'],
+        createdAt: now,
+        isRead: false,
       ));
 
       // Insight de oportunidade de economia
-      insights.add(FinancialInsight.savingsOpportunity(
-        category: 'Transporte',
-        potentialSavings: 150.0,
-        suggestion: 'Considere usar transporte público ou carona compartilhada.',
+      insights.add(FinancialInsight(
+        id: 'savings_opportunity_demo',
+        type: FinancialInsightType.savingsOpportunity,
+        priority: FinancialInsightPriority.medium,
+        title: 'Oportunidade de Economia em Transporte',
+        description: 'Considere usar transporte público ou carona compartilhada. Você poderia economizar até R\$ 150,00.',
+        data: {
+          'category': 'Transporte',
+          'potential_savings': 150.0,
+        },
+        actionSuggestions: ['Ver Alternativas', 'Calcular Economia'],
+        createdAt: now,
+        isRead: false,
       ));
 
       // Insight de progresso de meta
-      insights.add(FinancialInsight.goalProgress(
-        goalName: 'Reserva de Emergência',
-        currentAmount: 2500.0,
-        targetAmount: 5000.0,
-        isOnTrack: true,
+      insights.add(FinancialInsight(
+        id: 'goal_progress_demo',
+        type: FinancialInsightType.goalProgress,
+        priority: FinancialInsightPriority.low,
+        title: 'Progresso da Reserva de Emergência',
+        description: 'Você já tem R\$ 2.500,00 dos R\$ 5.000,00 da sua meta. Está no caminho certo!',
+        data: {
+          'goal_name': 'Reserva de Emergência',
+          'current': 2500.0,
+          'target': 5000.0,
+          'progress': 50.0,
+          'on_track': true,
+        },
+        actionSuggestions: ['Ver Progresso', 'Ajustar Meta'],
+        createdAt: now,
+        isRead: false,
       ));
 
       // Salvar insights no Firestore para histórico
@@ -289,12 +375,10 @@ class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
         'priority': insight.priority.name,
         'data': insight.data,
         'created_at': FieldValue.serverTimestamp(),
-        'expires_at': insight.expiresAt != null 
-            ? Timestamp.fromDate(insight.expiresAt!)
-            : null,
-        'tags': insight.tags,
-        'action_text': insight.actionText,
-        'action_route': insight.actionRoute,
+        'expires_at': null,
+        'tags': [],
+        'action_text': insight.actionSuggestions.isNotEmpty ? insight.actionSuggestions.first : null,
+        'action_route': null,
       });
     } catch (e) {
       print('⚠️ Erro ao salvar insight no Firestore: $e');
@@ -386,21 +470,72 @@ class ChatIaRemoteDataSourceImpl implements ChatIaRemoteDataSource {
 
   /// Gera resposta geral
   String _generateGeneralResponse(String userMessage) {
+    final lowerMessage = userMessage.toLowerCase().trim();
+    
+    // Respostas para saudações comuns
+    if (_containsKeywords(lowerMessage, ['oi', 'olá', 'ola', 'hey', 'ei', 'eae', 'eai', 'bom dia', 'boa tarde', 'boa noite', 'hello', 'hi'])) {
+      return '👋 **Olá! Que bom te ver por aqui!**\n\n'
+             'Sou seu assistente financeiro pessoal. Veja o que posso fazer:\n\n'
+             '💰 **Registrar gastos por texto:**\n'
+             '• "Gastei 50 no mercado"\n'
+             '• "Almocei por 35 reais"\n'
+             '• "Uber 22 reais"\n\n'
+             '📊 **Analisar suas finanças:**\n'
+             '• "Quanto gastei este mês?"\n'
+             '• "Onde estou gastando demais?"\n'
+             '• "Quanto posso gastar por dia?"\n\n'
+             '💡 **Dicas personalizadas:**\n'
+             '• "O que posso cortar?"\n'
+             '• "Dicas de economia"\n\n'
+             '⬇️ _Use os botões de **Perguntas rápidas** abaixo para começar!_';
+    }
+    
+    // Respostas para agradecimentos
+    if (_containsKeywords(lowerMessage, ['obrigado', 'obrigada', 'valeu', 'thanks', 'vlw', 'tmj', 'brigadão', 'brigada'])) {
+      return '😊 **De nada! Fico feliz em ajudar!**\n\n'
+             'Se precisar de mais alguma coisa, é só chamar:\n\n'
+             '• Registre um gasto: "Gastei X em Y"\n'
+             '• Peça uma análise: "Como estou indo?"\n'
+             '• Use as **perguntas rápidas** abaixo ⬇️';
+    }
+    
+    // Respostas para "tudo bem", "como vai", etc.
+    if (_containsKeywords(lowerMessage, ['tudo bem', 'como vai', 'tudo certo', 'beleza', 'de boa', 'suave'])) {
+      return '😄 **Tudo ótimo! E com você?**\n\n'
+             'Estou aqui pronto para te ajudar com suas finanças!\n\n'
+             '💡 **Experimente perguntar:**\n'
+             '• "Como estou indo este mês?"\n'
+             '• "Quanto gastei com alimentação?"\n'
+             '• "O que posso cortar?"\n\n'
+             '📝 **Ou registre um gasto:**\n'
+             '• "Gastei 50 reais no supermercado"';
+    }
+    
+    // Resposta padrão para mensagens não reconhecidas
     final responses = [
-      'Olá! 👋 Sou seu assistente financeiro inteligente.\n\n'
-      'Posso ajudar você com:\n'
-      '• Análise de gastos e relatórios\n'
-      '• Dicas de economia personalizadas\n'
-      '• Organização de categorias\n'
-      '• Definição e acompanhamento de metas\n\n'
-      'Como posso ajudar você hoje?',
+      '🤔 **Não entendi bem sua mensagem...**\n\n'
+      'Mas não se preocupe! Veja o que posso fazer:\n\n'
+      '💰 **Registrar gastos** — Digite algo como:\n'
+      '• "Gastei 50 no mercado"\n'
+      '• "Paguei 100 de luz"\n'
+      '• "Almoço 30 reais"\n\n'
+      '📊 **Analisar finanças** — Pergunte:\n'
+      '• "Quanto gastei este mês?"\n'
+      '• "Onde estou gastando demais?"\n'
+      '• "Como estou indo?"\n\n'
+      '⬇️ _Ou use os botões de **Perguntas rápidas** abaixo!_',
       
-      'Estou aqui para tornar sua vida financeira mais organizada! 💰\n\n'
-      'Algumas coisas que posso fazer:\n'
-      '📊 Criar relatórios visuais dos seus gastos\n'
-      '💡 Dar dicas de economia baseadas no seu perfil\n'
-      '🎯 Ajudar a definir e acompanhar metas\n\n'
-      'O que você gostaria de saber sobre suas finanças?',
+      '🧐 **Hmm, não consegui processar isso...**\n\n'
+      'Mas posso te ajudar de várias formas!\n\n'
+      '📝 **Para registrar gastos:**\n'
+      '• "Comprei roupa por 150 reais"\n'
+      '• "Uber 25 reais"\n'
+      '• "Netflix 55 reais"\n\n'
+      '📈 **Para análises:**\n'
+      '• "Estou gastando demais?"\n'
+      '• "O que posso cortar?"\n'
+      '• "Quanto posso gastar por dia?"\n\n'
+      '💡 _Dica: Use as **perguntas rápidas** para respostas personalizadas!_',
     ];
     
     return responses[DateTime.now().millisecond % responses.length];

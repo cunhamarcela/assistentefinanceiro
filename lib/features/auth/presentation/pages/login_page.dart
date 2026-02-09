@@ -18,8 +18,8 @@ class LoginPage extends GetView<AuthController> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF2C2C2E),
-              Color(0xFF1C1C1E),
+              AppColors.colorBrandPrimary,
+              AppColors.colorBrandDark,
             ],
           ),
         ),
@@ -97,7 +97,7 @@ class LoginPage extends GetView<AuthController> {
                       ),
                       child: Icon(
                         Icons.account_balance_wallet,
-                        color: Colors.white,
+                        color: AppColors.colorTextOnDark,
                         size: 20.sp,
                       ),
                     ),
@@ -107,7 +107,7 @@ class LoginPage extends GetView<AuthController> {
                 Text(
                   'Assistente Financeiro',
                   style: AppTextStyles.subtitle1.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.colorTextOnDark,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -127,13 +127,14 @@ class LoginPage extends GetView<AuthController> {
                   style: AppTextStyles.headline1.copyWith(
                     fontSize: 32.sp,
                     fontWeight: FontWeight.bold,
+                    color: AppColors.colorTextOnDark,
                   ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   'Continue sua jornada financeira.',
                   style: AppTextStyles.subtitle1.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.colorTextOnDark.withOpacity(0.8),
                   ),
                 ),
               ],

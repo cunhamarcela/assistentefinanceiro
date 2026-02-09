@@ -1,8 +1,11 @@
+import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../domain/entities/financial_profile.dart';
 import '../../domain/entities/financial_goal.dart';
+import '../../domain/entities/category.dart';
+import '../../domain/usecases/get_categories_usecase.dart';
 import '../models/financial_profile_model.dart';
 import '../models/financial_goal_model.dart';
 import '../../../auth/data/services/auth_service.dart';
@@ -195,11 +198,20 @@ class FinancialProfileService extends GetxService {
         userId TEXT NOT NULL,
         monthlyIncome REAL NOT NULL,
         totalBudget REAL NOT NULL,
+        monthlyInvestmentGoal REAL DEFAULT 0.0,
         categoryBudgets TEXT NOT NULL,
         createdAt INTEGER NOT NULL,
         updatedAt INTEGER NOT NULL
       )
     ''');
+    
+    // Adicionar coluna monthlyInvestmentGoal se não existir (migração)
+    try {
+      await db.execute('ALTER TABLE financial_profiles ADD COLUMN monthlyInvestmentGoal REAL DEFAULT 0.0');
+      print('✅ Coluna monthlyInvestmentGoal adicionada');
+    } catch (e) {
+      // Coluna já existe, ignorar erro
+    }
   }
 
   // ==================== METAS FINANCEIRAS ====================
@@ -418,12 +430,94 @@ class FinancialProfileService extends GetxService {
   /// Obter nome da categoria (método auxiliar)
   Future<String> _getCategoryName(String categoryId) async {
     try {
-      // Implementar busca do nome da categoria
-      // Por enquanto, retornar um nome genérico
-      return 'Categoria';
+      // Buscar categorias usando o use case
+      if (Get.isRegistered<GetCategoriesUseCase>()) {
+        final getCategoriesUseCase = Get.find<GetCategoriesUseCase>();
+        final categories = await getCategoriesUseCase.execute();
+        
+        // Usar lookup flexível para encontrar a categoria
+        final category = _findCategoryById(categoryId, categories);
+        if (category != null) {
+          return category.name;
+        }
+      }
+      
+      // Fallback: tentar obter nome pelo ID base
+      return _getCategoryNameFromId(categoryId);
     } catch (e) {
-      return 'Categoria';
+      print('⚠️ Erro ao buscar nome da categoria: $e');
+      return _getCategoryNameFromId(categoryId);
     }
+  }
+  
+  /// Busca categoria por ID com fallback para IDs sem sufixo do usuário
+  ExpenseCategory? _findCategoryById(String categoryId, List<ExpenseCategory> categories) {
+    if (categoryId.isEmpty || categories.isEmpty) return null;
+    
+    // 1. Tentar match exato
+    final exactMatch = categories.firstWhereOrNull((cat) => cat.id == categoryId);
+    if (exactMatch != null) return exactMatch;
+    
+    // 2. Tentar match onde o ID da categoria começa com o categoryId buscado
+    final startsWithMatch = categories.firstWhereOrNull(
+      (cat) => cat.id.startsWith('${categoryId}_')
+    );
+    if (startsWithMatch != null) return startsWithMatch;
+    
+    // 3. Tentar match onde o categoryId começa com o ID base da categoria
+    final reverseMatch = categories.firstWhereOrNull(
+      (cat) => categoryId.startsWith('${cat.id}_')
+    );
+    if (reverseMatch != null) return reverseMatch;
+    
+    // 4. Extrair ID base e tentar match
+    final baseId = _extractBaseCategoryId(categoryId);
+    if (baseId != categoryId) {
+      return categories.firstWhereOrNull(
+        (cat) => cat.id == baseId || 
+                 cat.id.startsWith('${baseId}_') ||
+                 _extractBaseCategoryId(cat.id) == baseId
+      );
+    }
+    
+    return null;
+  }
+  
+  /// Extrai o ID base de uma categoria removendo o sufixo do usuário
+  String _extractBaseCategoryId(String categoryId) {
+    final defaultIds = [
+      'alimentacao', 'transporte', 'saude', 'contas', 'lazer',
+      'casa', 'educacao', 'roupas', 'tecnologia', 'pets', 'outros', 'investimentos'
+    ];
+    
+    for (final baseId in defaultIds) {
+      if (categoryId == baseId || categoryId.startsWith('${baseId}_')) {
+        return baseId;
+      }
+    }
+    return categoryId;
+  }
+  
+  /// Obtém o nome da categoria a partir do ID base
+  String _getCategoryNameFromId(String categoryId) {
+    final baseId = _extractBaseCategoryId(categoryId);
+    
+    final categoryNames = {
+      'alimentacao': 'Alimentação',
+      'transporte': 'Transporte',
+      'saude': 'Saúde',
+      'contas': 'Contas',
+      'lazer': 'Lazer',
+      'casa': 'Casa',
+      'educacao': 'Educação',
+      'roupas': 'Roupas e Beleza',
+      'tecnologia': 'Tecnologia',
+      'pets': 'Pets',
+      'outros': 'Outros',
+      'investimentos': 'Investimentos',
+    };
+    
+    return categoryNames[baseId] ?? 'Categoria';
   }
 
   /// Atualizar valor gasto em uma meta

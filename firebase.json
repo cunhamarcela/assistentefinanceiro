@@ -1,1 +1,66 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"assistente-financeiro-ai","appId":"1:621248568025:android:27548fa68d04a60d7dfcc8","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"assistente-financeiro-ai","appId":"1:621248568025:ios:4591310c6aefffcf7dfcc8","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"assistente-financeiro-ai","appId":"1:621248568025:ios:4591310c6aefffcf7dfcc8","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"assistente-financeiro-ai","configurations":{"android":"1:621248568025:android:27548fa68d04a60d7dfcc8","ios":"1:621248568025:ios:4591310c6aefffcf7dfcc8","macos":"1:621248568025:ios:4591310c6aefffcf7dfcc8","web":"1:621248568025:web:4d91bd758ab1e6bf7dfcc8","windows":"1:621248568025:web:b70cabfa6385af2d7dfcc8"}}}}}}
+{
+  "hosting": {
+    "public": "web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "assistente-financeiro-ai",
+          "appId": "1:621248568025:android:27548fa68d04a60d7dfcc8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "assistente-financeiro-ai",
+          "appId": "1:621248568025:ios:4591310c6aefffcf7dfcc8",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "assistente-financeiro-ai",
+          "appId": "1:621248568025:ios:4591310c6aefffcf7dfcc8",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "assistente-financeiro-ai",
+          "configurations": {
+            "android": "1:621248568025:android:27548fa68d04a60d7dfcc8",
+            "ios": "1:621248568025:ios:4591310c6aefffcf7dfcc8",
+            "macos": "1:621248568025:ios:4591310c6aefffcf7dfcc8",
+            "web": "1:621248568025:web:4d91bd758ab1e6bf7dfcc8",
+            "windows": "1:621248568025:web:b70cabfa6385af2d7dfcc8"
+          }
+        }
+      }
+    }
+  }
+}

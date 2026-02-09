@@ -40,9 +40,16 @@ class GenerateAssistantReplyUseCase {
   /// Cria uma resposta offline padrão
   ChatMessage _createOfflineResponse() {
     return ChatMessage.assistant(
-      content: 'Desculpe, estou temporariamente indisponível. '
-               'Verifique sua conexão com a internet e tente novamente. '
-               'Enquanto isso, você pode navegar pelos seus gastos e relatórios.',
+      content: '📡 **Sem conexão com a internet**\n\n'
+               'Não consegui conectar ao servidor, mas você ainda pode:\n\n'
+               '📝 **Registrar gastos** — Digite algo como:\n'
+               '• "Gastei 50 no mercado"\n'
+               '• "Uber 25 reais"\n\n'
+               '📊 **Navegar pelo app:**\n'
+               '• Ver seus gastos registrados\n'
+               '• Consultar relatórios salvos\n'
+               '• Gerenciar categorias\n\n'
+               '🔄 _Verifique sua conexão e tente novamente._',
       metadata: {
         'type': 'offline_response',
         'has_insight': false,
@@ -54,8 +61,15 @@ class GenerateAssistantReplyUseCase {
   /// Cria uma resposta de erro
   ChatMessage _createErrorResponse(String error) {
     return ChatMessage.assistant(
-      content: 'Ops! Algo deu errado ao processar sua mensagem. '
-               'Tente reformular sua pergunta ou verifique sua conexão.',
+      content: '😅 **Ops! Algo deu errado...**\n\n'
+               'Mas não se preocupe! Você ainda pode:\n\n'
+               '💰 **Registrar gastos:**\n'
+               '• "Gastei 50 reais no mercado"\n'
+               '• "Comprei roupa por 150"\n\n'
+               '📊 **Usar perguntas rápidas:**\n'
+               '• "O que cortar?" — Onde economizar\n'
+               '• "Gastando demais?" — Análise de gastos\n\n'
+               '🔄 _Se o problema persistir, tente reiniciar o app._',
       metadata: {
         'type': 'error_response',
         'error': error,
@@ -66,3 +80,4 @@ class GenerateAssistantReplyUseCase {
     );
   }
 }
+

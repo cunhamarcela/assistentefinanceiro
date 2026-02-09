@@ -1,0 +1,187 @@
+# Cursor Rules — Assistente Financeiro IA
+
+## 🎨 DESIGN SYSTEM DE CORES
+
+### RULE 1 — Fonte de Verdade
+
+**OBRIGATÓRIO:** Antes de criar qualquer UI (tela, componente, widget), consultar:
+- `docs/DESIGN_SYSTEM_COLORS.md` — Documentação completa de cores
+- `lib/core/theme/app_colors.dart` — Implementação dos tokens
+
+Nenhuma decisão de cor deve ser tomada sem verificar esses arquivos.
+
+---
+
+### RULE 2 — Proibição de Cores Hardcoded
+
+**PROIBIDO usar valores HEX/RGB diretamente em componentes.**
+
+❌ NUNCA fazer:
+```dart
+Color(0xFF1A3D63)
+Color.fromRGBO(26, 61, 99, 1)
+Colors.blue
+```
+
+✅ SEMPRE usar:
+```dart
+AppColors.colorBrandPrimary
+AppColors.colorTextPrimary
+AppColors.colorActionPrimary
+```
+
+**Exceções permitidas:**
+- Seletor de cores para categorias personalizadas pelo usuário
+- Cores de categorias pré-definidas em `category.dart`
+
+---
+
+### RULE 3 — Uso Semântico de Tokens
+
+Tokens devem ser usados pelo **significado**, não por preferência visual.
+
+| Intenção | Token Correto |
+|----------|---------------|
+| Sucesso, valor positivo | `colorSuccess` |
+| Erro, valor negativo | `colorError` |
+| Alerta, atenção | `colorWarning` |
+| CTA principal | `colorActionPrimary` |
+| Texto principal | `colorTextPrimary` |
+| Texto sobre fundo escuro | `colorTextOnDark` |
+
+---
+
+### RULE 4 — Criação de Novos Componentes
+
+Todo novo componente DEVE declarar explicitamente quais tokens consome.
+
+**Formato obrigatório em comentário:**
+```dart
+/// Tokens utilizados:
+/// - Background: colorSurfaceCard
+/// - Texto título: colorTextPrimary
+/// - Texto secundário: colorTextMuted
+/// - Borda: colorBorderSubtle
+class MeuNovoCard extends StatelessWidget {
+```
+
+---
+
+### RULE 5 — Evolução do Sistema
+
+Se uma necessidade de cor não coberta pelo sistema surgir:
+
+1. **PARAR** a implementação
+2. **DOCUMENTAR** a necessidade no `DESIGN_SYSTEM_COLORS.md`
+3. **ADICIONAR** o novo token em `app_colors.dart`
+4. **ENTÃO** usar o novo token no código
+
+Nunca criar "soluções temporárias" com cores hardcoded.
+
+---
+
+### RULE 6 — Revisão Automática de Cores
+
+Antes de considerar QUALQUER tarefa de UI concluída, verificar:
+
+- [ ] Nenhum `Color(0x...)` hardcoded no código novo
+- [ ] Nenhum `Colors.blue/red/green` etc. (usar tokens)
+- [ ] `Colors.white` substituído por `colorTextOnDark` ou `colorSurfaceCard`
+- [ ] `Colors.black` substituído por `colorTextPrimary` ou `colorBrandDark`
+- [ ] AppBar usa `colorBrandDark` + `colorTextOnDark`
+- [ ] Botão primário usa `colorActionPrimary`
+- [ ] Cards usam `colorSurfaceCard` com borda `colorBorderSubtle`
+- [ ] Estados de erro usam `colorError`
+- [ ] Estados de sucesso usam `colorSuccess`
+
+---
+
+### RULE 7 — Limite de Accent Color
+
+A cor de accent (`colorActionPrimary` / #3CB371) deve ocupar **máximo 5%** da interface.
+
+**Permitido:**
+- 1 botão CTA principal por tela
+- Indicadores de sucesso
+- FAB
+- Valores financeiros positivos
+
+**Proibido:**
+- Múltiplos botões verdes na mesma tela
+- Fundos de área grande em verde
+- Uso decorativo sem função
+
+---
+
+### RULE 8 — Gradientes
+
+Apenas dois gradientes são permitidos:
+
+**Brand Gradient (headers, splash):**
+```dart
+LinearGradient(
+  colors: [AppColors.colorBrandPrimary, AppColors.colorBrandDark],
+)
+```
+
+**Accent Gradient (CTAs especiais):**
+```dart
+LinearGradient(
+  colors: [AppColors.colorActionPrimary, AppColors.colorBrandSoft],
+)
+```
+
+Qualquer outro gradiente requer atualização do Design System primeiro.
+
+---
+
+### RULE 9 — Acessibilidade de Contraste
+
+Combinações de texto/fundo devem atender WCAG AA (4.5:1 mínimo).
+
+**Combinações seguras:**
+- `colorTextPrimary` sobre `colorBackgroundPrimary` ✅
+- `colorTextSecondary` sobre `colorBackgroundPrimary` ✅
+- `colorTextOnDark` sobre `colorBrandDark` ✅
+- `colorTextOnDark` sobre `colorActionPrimary` ✅
+
+**Combinações proibidas:**
+- `colorTextMuted` sobre `colorBackgroundSecondary` ❌
+- `colorBorderSubtle` como cor de texto ❌
+
+---
+
+## 📁 ARQUIVOS DE REFERÊNCIA
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `docs/DESIGN_SYSTEM_COLORS.md` | Documentação completa (fonte de verdade) |
+| `lib/core/theme/app_colors.dart` | Implementação dos tokens |
+| `lib/core/theme/app_theme.dart` | ThemeData global |
+| `lib/core/theme/app_text_styles.dart` | Estilos de texto |
+
+---
+
+## 🎯 PALETA RESUMIDA
+
+| Token | HEX | Uso |
+|-------|-----|-----|
+| `colorBrandDark` | #0A1931 | AppBar, headers |
+| `colorBrandPrimary` | #1A3D63 | Marca, títulos |
+| `colorBrandSoft` | #4A7FA7 | Secundário, links |
+| `colorBackgroundPrimary` | #F6FAFD | Fundo geral |
+| `colorBackgroundSecondary` | #B3CFE5 | Áreas secundárias |
+| `colorSurfaceCard` | #FFFFFF | Cards |
+| `colorTextPrimary` | #0A1931 | Texto principal |
+| `colorTextSecondary` | #1A3D63 | Subtítulos |
+| `colorTextMuted` | #4A7FA7 | Captions |
+| `colorTextOnDark` | #F6FAFD | Texto sobre escuro |
+| `colorActionPrimary` | #3CB371 | CTAs, sucesso |
+| `colorSuccess` | #3CB371 | Sucesso |
+| `colorWarning` | #E9C46A | Alertas |
+| `colorError` | #E76F51 | Erros |
+| `colorBorderSubtle` | #B3CFE5 | Bordas leves |
+
+
+
+

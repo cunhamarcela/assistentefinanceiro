@@ -171,3 +171,4 @@ extension InsightReportTypeExtension on InsightReportType {
     }
   }
 }
+

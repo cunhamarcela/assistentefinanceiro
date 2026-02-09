@@ -58,14 +58,14 @@ class ReportSummaryCard extends StatelessWidget {
               Text(
                 report.title,
                 style: AppTextStyles.headingSmall.copyWith(
-                  color: Colors.white,
+                  color: AppColors.colorTextOnDark,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 report.description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.white.withOpacity(0.8),
+                  color: AppColors.colorTextOnDark.withOpacity(0.8),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -76,12 +76,12 @@ class ReportSummaryCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.colorTextOnDark.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             _getReportIcon(),
-            color: Colors.white,
+            color: AppColors.colorTextOnDark,
             size: 24,
           ),
         ),
@@ -134,7 +134,7 @@ class ReportSummaryCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: Colors.white.withOpacity(0.8),
+              color: AppColors.colorTextOnDark.withOpacity(0.8),
               size: 14,
             ),
             const SizedBox(width: AppSpacing.xs),
@@ -142,7 +142,7 @@ class ReportSummaryCard extends StatelessWidget {
               child: Text(
                 label,
                 style: AppTextStyles.caption.copyWith(
-                  color: Colors.white.withOpacity(0.8),
+                  color: AppColors.colorTextOnDark.withOpacity(0.8),
                   fontSize: 11,
                 ),
                 maxLines: 1,
@@ -155,7 +155,7 @@ class ReportSummaryCard extends StatelessWidget {
         Text(
           value,
           style: AppTextStyles.headingSmall.copyWith(
-            color: Colors.white,
+            color: AppColors.colorTextOnDark,
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -173,7 +173,7 @@ class ReportSummaryCard extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: AppColors.colorTextOnDark.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -181,7 +181,7 @@ class ReportSummaryCard extends StatelessWidget {
         children: [
           Icon(
             Icons.calendar_today,
-            color: Colors.white.withOpacity(0.8),
+            color: AppColors.colorTextOnDark.withOpacity(0.8),
             size: 14,
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -189,7 +189,7 @@ class ReportSummaryCard extends StatelessWidget {
             child: Text(
               report.periodDescription,
               style: AppTextStyles.caption.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: AppColors.colorTextOnDark.withOpacity(0.9),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

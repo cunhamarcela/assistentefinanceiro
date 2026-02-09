@@ -208,3 +208,4 @@ static const insights = '/insights';
 **Estimativa**: 2-3 sprints para funcionalidades completas  
 
 As funcionalidades estão prontas para integração e podem ser testadas com dados mockados. A arquitetura permite fácil extensão e manutenção conforme o produto evolui.
+

@@ -434,3 +434,4 @@ enum InsightChartType {
   line,
   bar,
 }
+

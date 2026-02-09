@@ -47,6 +47,13 @@ class ReportsPage extends GetView<ReportsController> {
       backgroundColor: AppColors.background,
       elevation: 1,
       shadowColor: AppColors.divider,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: AppColors.textDark,
+        ),
+        onPressed: () => Get.back(),
+      ),
       title: Text(
         'Relatórios',
         style: AppTextStyles.headingSmall.copyWith(

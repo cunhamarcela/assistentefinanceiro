@@ -419,3 +419,4 @@ class InsightRepositoryImpl implements InsightRepository {
     }
   }
 }
+

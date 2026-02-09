@@ -51,13 +51,15 @@ class ProfilePage extends GetView<ProfileController> {
                 onPressed: () => Get.back(),
                 icon: const Icon(
                   Icons.arrow_back_ios,
-                  color: AppColors.textPrimary,
+                  color: AppColors.colorTextOnDark,
                 ),
               ),
               Expanded(
                 child: Text(
                   'Perfil',
-                  style: AppTextStyles.headline2,
+                  style: AppTextStyles.headline2.copyWith(
+                    color: AppColors.colorTextOnDark,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -69,14 +71,16 @@ class ProfilePage extends GetView<ProfileController> {
           const SizedBox(height: AppSpacing.md),
           Obx(() => Text(
             controller.displayName,
-            style: AppTextStyles.headline2,
+            style: AppTextStyles.headline2.copyWith(
+              color: AppColors.colorTextPrimary,
+            ),
             textAlign: TextAlign.center,
           )),
           const SizedBox(height: AppSpacing.xs),
           Obx(() => Text(
             controller.user?.email ?? '',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.textPrimary.withOpacity(0.8),
+              color: AppColors.colorTextSecondary,
             ),
             textAlign: TextAlign.center,
           )),
@@ -96,7 +100,7 @@ class ProfilePage extends GetView<ProfileController> {
               shape: BoxShape.circle,
               gradient: AppColors.accentGradient,
               border: Border.all(
-                color: AppColors.textPrimary,
+                color: AppColors.colorTextOnDark,
                 width: 3,
               ),
             ),
@@ -120,13 +124,13 @@ class ProfilePage extends GetView<ProfileController> {
               height: 36.w,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.blue,
+                color: AppColors.colorBrandSoft,
               ),
               child: IconButton(
                 onPressed: controller.goToEditProfile,
                 icon: const Icon(
                   Icons.edit,
-                  color: AppColors.textPrimary,
+                  color: AppColors.colorTextOnDark,
                   size: 18,
                 ),
                 padding: EdgeInsets.zero,
@@ -218,6 +222,12 @@ class ProfilePage extends GetView<ProfileController> {
                 subtitle: controller.currentCountry.value,
                 onTap: controller.showCountrySelector,
               ),
+              _buildMenuItem(
+                icon: Icons.play_circle_outline,
+                title: 'Ver introdução do app',
+                subtitle: 'Rever a tela de boas-vindas',
+                onTap: controller.showOnboardingAgain,
+              ),
             ],
           ),
           
@@ -228,8 +238,19 @@ class ProfilePage extends GetView<ProfileController> {
             text: 'Logout',
             onPressed: controller.logout,
             loading: controller.isLoading,
-            color: AppColors.error,
-            textColor: AppColors.error,
+            color: AppColors.colorBrandPrimary,
+            textColor: AppColors.colorBrandPrimary,
+          )),
+          
+          const SizedBox(height: AppSpacing.md),
+          
+          // Botão de Excluir Conta
+          Obx(() => AppButton.outlined(
+            text: 'Excluir Conta',
+            onPressed: controller.deleteAccount,
+            loading: controller.isLoading,
+            color: AppColors.colorError,
+            textColor: AppColors.colorError,
           )),
           
           const SizedBox(height: AppSpacing.xl),

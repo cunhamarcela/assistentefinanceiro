@@ -5,6 +5,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/services/crash_reporting_service.dart';
+import '../../../../core/services/logging_service.dart';
 import 'firestore_user_service.dart';
 import '../../../expenses/data/repositories/expense_hybrid_repository.dart';
 import '../../../expenses/data/datasources/expense_local_datasource.dart';
@@ -28,6 +30,8 @@ class AuthService extends GetxService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final SecureStorage _secureStorage = SecureStorage.instance;
+  final _crashReporting = CrashReportingService.instance;
+  final _logger = LoggingService.instance;
   FirestoreUserService? _firestoreUserService;
 
   // Observables
@@ -70,8 +74,15 @@ class AuthService extends GetxService {
 
       // Tentar recuperar usuário salvo
       await _loadSavedUser();
-    } catch (e) {
+      
+      _logger.logInfo('Auth', 'Autenticação inicializada com sucesso');
+    } catch (e, stack) {
       _handleError('Erro ao inicializar autenticação', e);
+      _crashReporting.recordError(
+        e,
+        stack,
+        reason: 'Erro ao inicializar autenticação',
+      );
     } finally {
       _isLoading.value = false;
     }
@@ -139,6 +150,8 @@ class AuthService extends GetxService {
     try {
       _isLoading.value = true;
       _lastError.value = '';
+      
+      _logger.logInfo('Auth', 'Tentando login com email');
 
       _validateEmail(email);
       _validatePassword(password);
@@ -158,15 +171,26 @@ class AuthService extends GetxService {
       // Salvar dados
       await _secureStorage.saveUserData(userModel);
       await _secureStorage.saveLastEmail(email.trim());
+      
+      _logger.logLogin('email');
+      _logger.logInfo('Auth', 'Login com email realizado com sucesso');
 
       return userModel;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, stack) {
       final message = _getFirebaseErrorMessage(e.code);
       _lastError.value = message;
+      
+      _crashReporting.recordAuthError(e, stack, authMethod: 'email');
+      _logger.logAuthError('email', e.code);
+      
       throw AuthException(message, code: e.code);
-    } catch (e) {
+    } catch (e, stack) {
       final message = 'Erro inesperado durante o login';
       _lastError.value = message;
+      
+      _crashReporting.recordAuthError(e, stack, authMethod: 'email');
+      _logger.logError('Auth', 'Erro inesperado no login com email', error: e, stackTrace: stack);
+      
       throw AuthException(message);
     } finally {
       _isLoading.value = false;
@@ -182,6 +206,8 @@ class AuthService extends GetxService {
     try {
       _isLoading.value = true;
       _lastError.value = '';
+      
+      _logger.logInfo('Auth', 'Tentando criar conta com email');
 
       _validateEmail(email);
       _validatePassword(password);
@@ -209,6 +235,9 @@ class AuthService extends GetxService {
       // Salvar dados
       await _secureStorage.saveUserData(userModel);
       await _secureStorage.saveLastEmail(email.trim());
+      
+      _logger.logSignUp('email');
+      _logger.logInfo('Auth', 'Conta criada com sucesso');
 
       return userModel;
     } on FirebaseAuthException catch (e) {
@@ -229,9 +258,12 @@ class AuthService extends GetxService {
     try {
       _isLoading.value = true;
       _lastError.value = '';
+      
+      _logger.logInfo('Auth', 'Tentando login com Google');
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
+        _logger.logInfo('Auth', 'Login com Google cancelado pelo usuário');
         throw const AuthException('Login com Google cancelado');
       }
 
@@ -253,15 +285,26 @@ class AuthService extends GetxService {
       // Salvar dados
       await _secureStorage.saveUserData(userModel);
       await _secureStorage.saveLastEmail(userModel.email);
+      
+      _logger.logLogin('google');
+      _logger.logInfo('Auth', 'Login com Google realizado com sucesso');
 
       return userModel;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, stack) {
       final message = _getFirebaseErrorMessage(e.code);
       _lastError.value = message;
+      
+      _crashReporting.recordAuthError(e, stack, authMethod: 'google');
+      _logger.logAuthError('google', e.code);
+      
       throw AuthException(message, code: e.code);
-    } catch (e) {
+    } catch (e, stack) {
       final message = 'Erro inesperado durante login com Google';
       _lastError.value = message;
+      
+      _crashReporting.recordAuthError(e, stack, authMethod: 'google');
+      _logger.logError('Auth', 'Erro inesperado no login com Google', error: e, stackTrace: stack);
+      
       throw AuthException(message);
     } finally {
       _isLoading.value = false;
@@ -537,6 +580,51 @@ class AuthService extends GetxService {
     }
   }
 
+  /// Deletar conta do usuário
+  Future<void> deleteAccount({String? password}) async {
+    try {
+      _isLoading.value = true;
+      final user = _firebaseAuth.currentUser;
+      
+      if (user == null) {
+        throw const AuthException('Usuário não está logado');
+      }
+
+      // Reautenticar se necessário (para contas com email/senha)
+      if (password != null && user.email != null) {
+        await reauthenticateWithPassword(password);
+      }
+
+      final userId = user.uid;
+
+      // Deletar dados do Firestore
+      try {
+        await _firestoreUserService?.deleteUserFromFirestore(userId);
+      } catch (e) {
+        print('Erro ao deletar dados do Firestore: $e');
+        // Continua mesmo se falhar, pois o importante é deletar a conta
+      }
+
+      // Deletar conta do Firebase Auth
+      await user.delete();
+
+      // Limpar dados locais
+      await _secureStorage.clearAuthData();
+      _currentUser.value = null;
+      _lastError.value = '';
+
+      print('✅ Conta deletada com sucesso');
+    } on FirebaseAuthException catch (e) {
+      final message = _getFirebaseErrorMessage(e.code);
+      throw AuthException(message, code: e.code);
+    } catch (e) {
+      final message = 'Erro inesperado ao deletar conta';
+      throw AuthException(message);
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
   /// Logout
   Future<void> signOut() async {
     try {
@@ -561,26 +649,6 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Excluir conta
-  Future<void> deleteAccount() async {
-    try {
-      _isLoading.value = true;
-      final user = _firebaseAuth.currentUser;
-      
-      if (user == null) {
-        throw const AuthException('Usuário não está logado');
-      }
-
-      await user.delete();
-      _currentUser.value = null;
-      await _secureStorage.clearAll();
-    } on FirebaseAuthException catch (e) {
-      final message = _getFirebaseErrorMessage(e.code);
-      throw AuthException(message, code: e.code);
-    } finally {
-      _isLoading.value = false;
-    }
-  }
 
   // ==================== VALIDAÇÕES ====================
 

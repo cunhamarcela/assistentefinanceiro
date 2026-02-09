@@ -1,6 +1,6 @@
 # Termos de Serviço - Assistente Financeiro
 
-**Data de vigência**: [DATA_ATUAL]
+**Data de vigência**: 26 de Setembro de 2025
 
 ## 1. Aceitação dos Termos
 
@@ -183,7 +183,7 @@ Podemos suspender ou encerrar sua conta por:
 1. **Negociação**: Tentativa de resolução amigável
 2. **Mediação**: Através de câmara de mediação
 3. **Arbitragem**: Se necessário, conforme lei brasileira
-4. **Foro**: Comarca de [SUA_CIDADE], Brasil
+4. **Foro**: Comarca de São Paulo, SP, Brasil
 
 ## 14. Disposições Gerais
 
@@ -208,14 +208,14 @@ Podemos suspender ou encerrar sua conta por:
 ### 15.1 Dúvidas sobre os Termos
 Para questões sobre estes termos:
 
-- **Email**: [SEU_EMAIL_DE_SUPORTE]
-- **Endereço**: [SEU_ENDEREÇO_COMERCIAL]
-- **Telefone**: [SEU_TELEFONE_DE_SUPORTE]
+- **Email**: contato@assistentefinanceiro.app
+- **Endereço**: Rua das Flores, 123 - São Paulo, SP - Brasil
+- **Telefone**: +55 (11) 99999-9999
 
 ### 15.2 Suporte Técnico
 Para problemas técnicos ou suporte:
 - Use a função "Contato" dentro do App
-- Email: [SEU_EMAIL_DE_SUPORTE]
+- Email: suporte@assistentefinanceiro.app
 
 ### 15.3 Tempo de Resposta
 - Responderemos em até 48 horas (dias úteis)
@@ -223,7 +223,7 @@ Para problemas técnicos ou suporte:
 
 ---
 
-**Última atualização**: [DATA_ATUAL]
+**Última atualização**: 26 de Setembro de 2025
 
 **Versão**: 1.0
 
@@ -241,7 +241,7 @@ Para problemas técnicos ou suporte:
 - O App é fornecido "como está"
 - Seus dados são protegidos conforme nossa Política de Privacidade
 
-📞 **Dúvidas**: Entre em contato através de [SEU_EMAIL_DE_SUPORTE]
+📞 **Dúvidas**: Entre em contato através de contato@assistentefinanceiro.app
 
 ---
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 
 class ExpenseSummary extends StatelessWidget {
@@ -23,16 +24,19 @@ class ExpenseSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+      ),
       child: Container(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(16.r),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primary,
-              AppColors.secondary,
+              AppColors.colorBrandPrimary,
+              AppColors.colorBrandDark,
             ],
           ),
         ),
@@ -44,53 +48,42 @@ class ExpenseSummary extends StatelessWidget {
               children: [
                 Icon(
                   Icons.account_balance_wallet,
-                  color: Colors.white,
+                  color: AppColors.colorTextOnDark,
                   size: 24.sp,
                 ),
                 SizedBox(width: 8.w),
                 Text(
                   'Resumo Financeiro',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: AppTextStyles.headingMedium.copyWith(
+                    color: AppColors.colorTextOnDark,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 24.h),
             
-            // Total do mês (destaque)
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total do Mês',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
+            // Total do mês (destaque limpo)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Total do Mês',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.colorTextOnDark.withOpacity(0.7),
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    CurrencyFormatter.formatCurrency(totalMonth),
-                    style: TextStyle(
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  CurrencyFormatter.formatCurrency(totalMonth),
+                  style: AppTextStyles.currencyLarge.copyWith(
+                    color: AppColors.colorTextOnDark,
+                    fontSize: 36.sp,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             
-            SizedBox(height: 16.h),
+            SizedBox(height: 24.h),
             
             // Estatísticas em grid
             Row(
@@ -142,10 +135,13 @@ class ExpenseSummary extends StatelessWidget {
 
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8.r),
+        color: AppColors.colorTextOnDark.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColors.colorTextOnDark.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,29 +150,27 @@ class ExpenseSummary extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Colors.white.withOpacity(0.8),
+                color: AppColors.colorTextOnDark.withOpacity(0.7),
                 size: 16.sp,
               ),
-              SizedBox(width: 4.w),
+              SizedBox(width: 6.w),
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.white.withOpacity(0.8),
+                  style: AppTextStyles.label.copyWith(
+                    color: AppColors.colorTextOnDark.withOpacity(0.7),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 8.h),
           Text(
             value,
-            style: TextStyle(
+            style: AppTextStyles.headingSmall.copyWith(
+              color: AppColors.colorTextOnDark,
               fontSize: 16.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           ),
         ],

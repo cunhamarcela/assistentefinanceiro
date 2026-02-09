@@ -103,3 +103,4 @@ abstract class InsightRepository {
   /// Limpa relatórios antigos
   Future<void> clearOldReports(String userId, {int keepDays = 90});
 }
+

@@ -15,6 +15,12 @@ ExpenseModel _$ExpenseModelFromJson(Map<String, dynamic> json) => ExpenseModel(
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      paymentType:
+          $enumDecodeNullable(_$PaymentTypeEnumMap, json['paymentType']) ??
+              PaymentType.cash,
+      creditCardId: json['creditCardId'] as String?,
+      installmentInfo: ExpenseModel._installmentInfoFromJson(
+          json['installmentInfo'] as Map<String, dynamic>?),
     );
 
 Map<String, dynamic> _$ExpenseModelToJson(ExpenseModel instance) =>
@@ -27,4 +33,16 @@ Map<String, dynamic> _$ExpenseModelToJson(ExpenseModel instance) =>
       'notes': instance.notes,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
+      'paymentType': _$PaymentTypeEnumMap[instance.paymentType]!,
+      'creditCardId': instance.creditCardId,
+      'installmentInfo':
+          ExpenseModel._installmentInfoToJson(instance.installmentInfo),
     };
+
+const _$PaymentTypeEnumMap = {
+  PaymentType.cash: 'cash',
+  PaymentType.debit: 'debit',
+  PaymentType.credit: 'credit',
+  PaymentType.pix: 'pix',
+  PaymentType.other: 'other',
+};

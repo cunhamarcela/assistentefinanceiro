@@ -321,18 +321,25 @@ class CategoriesPage extends GetView<CategoryController> {
     showModalBottomSheet(
       context: Get.context!,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.9,
         minChildSize: 0.4,
         builder: (context, scrollController) => Container(
-          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.r),
+              topRight: Radius.circular(20.r),
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Handle
               Center(
                 child: Container(
+                  margin: EdgeInsets.only(top: 12.h, bottom: 8.h),
                   width: 40.w,
                   height: 4.h,
                   decoration: BoxDecoration(
@@ -341,120 +348,127 @@ class CategoriesPage extends GetView<CategoryController> {
                   ),
                 ),
               ),
-              SizedBox(height: 16.h),
               
-              // Cabeçalho da categoria
-              Row(
-                children: [
-                  Container(
-                    width: 48.w,
-                    height: 48.w,
-                    decoration: BoxDecoration(
-                      color: category.color,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Icon(
-                      category.iconData,
-                      color: Colors.white,
-                      size: 24.w,
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              // Conteúdo scrollável
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: EdgeInsets.all(16.w),
+                  children: [
+                    // Cabeçalho da categoria
+                    Row(
                       children: [
-                        Text(
-                          category.name,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          width: 48.w,
+                          height: 48.w,
+                          decoration: BoxDecoration(
+                            color: category.color,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Icon(
+                            category.iconData,
+                            color: Colors.white,
+                            size: 24.w,
                           ),
                         ),
-                        Text(
-                          category.isDefault ? 'Categoria padrão' : 'Categoria personalizada',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.grey[600],
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                category.name,
+                                style: TextStyle(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                category.isDefault ? 'Categoria padrão' : 'Categoria personalizada',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        if (!category.isDefault) ...[
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _editCategory(category);
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              controller.confirmDeleteCategory(category);
+                            },
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                          ),
+                        ],
                       ],
                     ),
-                  ),
-                  if (!category.isDefault) ...[
-                    IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _editCategory(category);
-                      },
-                      icon: const Icon(Icons.edit),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        controller.confirmDeleteCategory(category);
-                      },
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                    ),
-                  ],
-                ],
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              // Estatísticas
-              if (stats != null) ...[
-                Text(
-                  'Estatísticas',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Despesas',
-                        stats.expenseCount.toString(),
-                        Icons.receipt,
+                    
+                    SizedBox(height: 24.h),
+                    
+                    // Estatísticas
+                    if (stats != null) ...[
+                      Text(
+                        'Estatísticas',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Despesas',
+                              stats.expenseCount.toString(),
+                              Icons.receipt,
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Total',
+                              'R\$ ${stats.totalAmount.toStringAsFixed(2)}',
+                              Icons.attach_money,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24.h),
+                    ],
+                    
+                    // Palavras-chave
+                    Text(
+                      'Palavras-chave',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Total',
-                        'R\$ ${stats.totalAmount.toStringAsFixed(2)}',
-                        Icons.attach_money,
-                      ),
+                    SizedBox(height: 12.h),
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: category.keywords.map<Widget>((keyword) => Chip(
+                        label: Text(
+                          keyword,
+                          style: TextStyle(fontSize: 12.sp),
+                        ),
+                        backgroundColor: category.color.withOpacity(0.1),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      )).toList(),
                     ),
+                    SizedBox(height: 16.h),
                   ],
-                ),
-                SizedBox(height: 16.h),
-              ],
-              
-              // Palavras-chave
-              Text(
-                'Palavras-chave',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Flexible(
-                child: Wrap(
-                  spacing: 8.w,
-                  runSpacing: 8.h,
-                  children: category.keywords.map<Widget>((keyword) => Chip(
-                    label: Text(
-                      keyword,
-                      style: TextStyle(fontSize: 12.sp),
-                    ),
-                    backgroundColor: category.color.withOpacity(0.1),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  )).toList(),
                 ),
               ),
             ],

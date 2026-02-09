@@ -1,0 +1,38 @@
+REVIEW NOTES - CORRECTIONS IMPLEMENTED
+
+Dear Apple Review Team,
+
+We have resolved both issues from the previous review:
+
+1. PRIVACY (Guideline 5.1.2) - RESOLVED:
+   - REMOVED NSUserTrackingUsageDescription from Info.plist (root cause of the issue)
+   - Created new build (1.0.1 build 3) with clean configuration
+   - Our app does NOT perform advertising tracking - email is used only for authentication and app functionality
+   - Attempted to update App Store Connect privacy settings for 24+ hours but encountered persistent errors due to the conflicting key in previous build
+   - This new build has corrected Info.plist that accurately reflects our data practices
+
+2. SUPPORT URL (Guideline 1.5) - RESOLVED:
+   - Created functional support website at https://assistente-financeiro-ai.web.app
+   - Includes complete support info, privacy policy, terms of service, and troubleshooting guide
+   - Verified working with HTTP 200 status
+
+TECHNICAL EXPLANATION:
+Previous build had NSUserTrackingUsageDescription in Info.plist which incorrectly signaled tracking capability. This prevented App Store Connect privacy configuration from being updated. We have now removed this key completely and created a new build that accurately reflects our app does not track users for advertising purposes.
+
+VERIFICATION:
+✓ Code compliance verified - no tracking keys in Info.plist
+✓ Support URL fully functional
+✓ Privacy practices accurately documented
+✓ All functionality tested on iOS devices
+
+Contact: suporte@assistentefinanceiro.app
+Support: https://assistente-financeiro-ai.web.app
+
+Thank you for your review.
+
+Assistente Financeiro IA Team
+
+
+
+
+

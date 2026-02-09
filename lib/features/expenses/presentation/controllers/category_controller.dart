@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/usecases/category_management_usecase.dart';
 
@@ -40,8 +41,8 @@ class CategoryController extends GetxController {
         'Erro',
         'Erro ao carregar categorias: $e',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorError,
+        colorText: AppColors.colorTextOnDark,
       );
     } finally {
       isLoading.value = false;
@@ -92,8 +93,8 @@ class CategoryController extends GetxController {
         'Sucesso',
         'Categoria "$name" criada com sucesso!',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorSuccess,
+        colorText: AppColors.colorTextOnDark,
         duration: const Duration(seconds: 2),
       );
 
@@ -107,8 +108,8 @@ class CategoryController extends GetxController {
         'Erro',
         e.toString(),
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorError,
+        colorText: AppColors.colorTextOnDark,
       );
     } finally {
       print('🏷️ [CategoryController] Finalizando (isSaving = false)');
@@ -191,8 +192,8 @@ class CategoryController extends GetxController {
         'Sucesso',
         'Categoria "$name" atualizada com sucesso!',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorSuccess,
+        colorText: AppColors.colorTextOnDark,
         duration: const Duration(seconds: 2),
       );
 
@@ -206,8 +207,8 @@ class CategoryController extends GetxController {
         'Erro',
         e.toString(),
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorError,
+        colorText: AppColors.colorTextOnDark,
       );
     } finally {
       print('🏷️ [CategoryController] Finalizando (isSaving = false)');
@@ -233,8 +234,8 @@ class CategoryController extends GetxController {
         'Sucesso',
         'Categoria "${category.name}" excluída com sucesso!',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorSuccess,
+        colorText: AppColors.colorTextOnDark,
       );
     } catch (e) {
       errorMessage.value = e.toString();
@@ -242,8 +243,8 @@ class CategoryController extends GetxController {
         'Erro',
         e.toString(),
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorError,
+        colorText: AppColors.colorTextOnDark,
       );
     } finally {
       isLoading.value = false;
@@ -257,8 +258,8 @@ class CategoryController extends GetxController {
         'Aviso',
         'Categorias padrão não podem ser excluídas',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
+        backgroundColor: AppColors.colorWarning,
+        colorText: AppColors.colorTextOnDark,
       );
       return;
     }
@@ -278,7 +279,7 @@ class CategoryController extends GetxController {
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.colorError,
             ),
             child: const Text('Excluir'),
           ),

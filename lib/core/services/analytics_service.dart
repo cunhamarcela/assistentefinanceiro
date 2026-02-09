@@ -1,32 +1,64 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:get/get.dart';
 import '../storage/storage_service.dart';
 
-/// Serviço de analytics para rastreamento de eventos de retenção
-class AnalyticsService {
+/// Serviço de analytics integrado com Firebase Analytics
+/// 
+/// Este serviço envia eventos diretamente para o Firebase Analytics,
+/// permitindo rastreamento de monetização, engajamento e retenção.
+class AnalyticsService extends GetxService {
   static AnalyticsService? _instance;
   static AnalyticsService get instance => _instance ??= AnalyticsService._();
   
   AnalyticsService._();
 
-  final StorageService _localStorage = StorageService.instance;
-  final List<AnalyticsEvent> _eventQueue = [];
+  late final FirebaseAnalytics _analytics;
+  StorageService? _localStorage;
   bool _isInitialized = false;
+  
+  // Chaves para first-time events
+  static const String _keyFirstChatMessage = 'analytics_first_chat_message';
+  static const String _keyFirstReportView = 'analytics_first_report_view';
+  static const String _keyFirstAdShown = 'analytics_first_ad_shown';
+  static const String _keyFirstLimitReached = 'analytics_first_limit_reached';
+  static const String _keyInstallDate = 'analytics_install_date';
+  static const String _keyTotalAdsWatched = 'analytics_total_ads_watched';
+  static const String _keySessionCount = 'analytics_session_count';
 
   /// Inicializa o serviço de analytics
   Future<void> initialize() async {
     if (_isInitialized) return;
     
     try {
-      // Carrega eventos pendentes do armazenamento local
-      await _loadPendingEvents();
+      _analytics = FirebaseAnalytics.instance;
       
-      // Configura envio periódico de eventos
-      _scheduleEventSync();
+      // Tenta obter StorageService se disponível
+      try {
+        if (Get.isRegistered<StorageService>()) {
+          _localStorage = Get.find<StorageService>();
+        } else {
+          _localStorage = StorageService.instance;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ StorageService não disponível para analytics: $e');
+        }
+      }
       
       _isInitialized = true;
       
+      // Registra data de instalação se primeira vez
+      await _trackInstallDateIfNeeded();
+      
+      // Incrementa contador de sessões
+      await _incrementSessionCount();
+      
+      // Define user properties iniciais
+      await _setInitialUserProperties();
+      
       if (kDebugMode) {
-        print('📊 AnalyticsService inicializado');
+        print('📊 AnalyticsService inicializado com Firebase Analytics');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -35,20 +67,149 @@ class AnalyticsService {
     }
   }
 
+  // ==================== USER PROPERTIES ====================
+
+  /// Define user properties iniciais
+  Future<void> _setInitialUserProperties() async {
+    try {
+      // Tipo de usuário (pode ser atualizado depois)
+      await setUserProperty(name: 'user_type', value: 'free');
+      
+      // Total de ads assistidos
+      final totalAds = _localStorage?.getInt(_keyTotalAdsWatched) ?? 0;
+      await setUserProperty(name: 'total_ads_watched', value: totalAds.toString());
+      
+      // Dias desde instalação
+      final installDateStr = _localStorage?.getString(_keyInstallDate);
+      if (installDateStr != null) {
+        final installDate = DateTime.tryParse(installDateStr);
+        if (installDate != null) {
+          final daysSinceInstall = DateTime.now().difference(installDate).inDays;
+          await setUserProperty(name: 'days_since_install', value: daysSinceInstall.toString());
+        }
+      }
+      
+      // Contador de sessões
+      final sessionCount = _localStorage?.getInt(_keySessionCount) ?? 0;
+      await setUserProperty(name: 'session_count', value: sessionCount.toString());
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao definir user properties: $e');
+      }
+    }
+  }
+
+  /// Define uma user property customizada
+  Future<void> setUserProperty({required String name, required String? value}) async {
+    try {
+      await _analytics.setUserProperty(name: name, value: value);
+      if (kDebugMode) {
+        print('📊 User property definida: $name = $value');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao definir user property $name: $e');
+      }
+    }
+  }
+
+  /// Define o ID do usuário para analytics
+  Future<void> setUserId(String? userId) async {
+    try {
+      await _analytics.setUserId(id: userId);
+      if (kDebugMode) {
+        print('📊 User ID definido: $userId');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao definir user ID: $e');
+      }
+    }
+  }
+
+  /// Atualiza tipo de usuário (free/premium)
+  Future<void> setUserType(String userType) async {
+    await setUserProperty(name: 'user_type', value: userType);
+  }
+
+  // ==================== FIRST-TIME TRACKING ====================
+
+  /// Registra data de instalação se primeira vez
+  Future<void> _trackInstallDateIfNeeded() async {
+    try {
+      final existingDate = _localStorage?.getString(_keyInstallDate);
+      if (existingDate == null) {
+        final now = DateTime.now().toIso8601String();
+        await _localStorage?.setString(_keyInstallDate, now);
+        
+        // Evento de primeira abertura
+        await _logEvent(
+          name: 'app_first_open',
+          parameters: {'install_date': now},
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao registrar data de instalação: $e');
+      }
+    }
+  }
+
+  /// Incrementa contador de sessões
+  Future<void> _incrementSessionCount() async {
+    try {
+      final currentCount = _localStorage?.getInt(_keySessionCount) ?? 0;
+      await _localStorage?.setInt(_keySessionCount, currentCount + 1);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao incrementar sessão: $e');
+      }
+    }
+  }
+
+  /// Verifica e registra evento de primeira vez
+  Future<bool> _trackFirstTimeEvent(String key, String eventName, Map<String, Object>? params) async {
+    try {
+      final alreadyTracked = _localStorage?.getBool(key) ?? false;
+      if (!alreadyTracked) {
+        await _localStorage?.setBool(key, true);
+        await _logEvent(name: eventName, parameters: params);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao rastrear first-time event: $e');
+      }
+      return false;
+    }
+  }
+
+  // ==================== EVENTOS DE CHAT ====================
+
   /// Registra um evento de chat IA
   Future<void> trackChatEvent({
     required ChatEventType type,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
-      name: 'chat_${type.name}',
-      category: 'chat_ai',
-      properties: {
-        'event_type': type.name,
-        ...?properties,
-      },
-    );
+    final params = <String, Object>{
+      'event_type': type.name,
+      ...?_sanitizeParams(properties),
+    };
+    
+    await _logEvent(name: 'chat_${type.name}', parameters: params);
+    
+    // Rastreia primeira mensagem
+    if (type == ChatEventType.promptSent) {
+      await _trackFirstTimeEvent(
+        _keyFirstChatMessage,
+        'chat_first_message',
+        params,
+      );
+    }
   }
+
+  // ==================== EVENTOS DE RELATÓRIO ====================
 
   /// Registra um evento de relatório visual
   Future<void> trackReportEvent({
@@ -56,31 +217,194 @@ class AnalyticsService {
     String? reportType,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
-      name: 'report_${type.name}',
-      category: 'visual_reports',
-      properties: {
-        'event_type': type.name,
-        'report_type': reportType,
-        ...?properties,
+    final params = <String, Object>{
+      'event_type': type.name,
+      if (reportType != null) 'report_type': reportType,
+      ...?_sanitizeParams(properties),
+    };
+    
+    await _logEvent(name: 'report_${type.name}', parameters: params);
+    
+    // Rastreia primeiro relatório visualizado
+    if (type == ReportEventType.viewed) {
+      await _trackFirstTimeEvent(
+        _keyFirstReportView,
+        'report_first_view',
+        params,
+      );
+    }
+  }
+
+  // ==================== EVENTOS DE MONETIZAÇÃO ====================
+
+  /// Registra impressão de anúncio
+  Future<void> trackAdImpression({
+    required String adUnitId,
+    required String featureType,
+    String adFormat = 'rewarded',
+  }) async {
+    await _logEvent(
+      name: 'ad_impression',
+      parameters: {
+        'ad_unit_id': adUnitId,
+        'feature_type': featureType,
+        'ad_format': adFormat,
+      },
+    );
+    
+    // Rastreia primeiro anúncio exibido
+    await _trackFirstTimeEvent(
+      _keyFirstAdShown,
+      'ad_first_shown',
+      {'feature_type': featureType},
+    );
+  }
+
+  /// Registra quando usuário inicia visualização do anúncio
+  Future<void> trackAdStarted({
+    required String adUnitId,
+    required String featureType,
+  }) async {
+    await _logEvent(
+      name: 'ad_started',
+      parameters: {
+        'ad_unit_id': adUnitId,
+        'feature_type': featureType,
       },
     );
   }
+
+  /// Registra quando usuário completa anúncio e ganha recompensa
+  Future<void> trackAdRewardEarned({
+    required String featureType,
+    required int durationHours,
+    required String adUnitId,
+  }) async {
+    await _logEvent(
+      name: 'ad_reward_earned',
+      parameters: {
+        'feature_type': featureType,
+        'duration_hours': durationHours,
+        'ad_unit_id': adUnitId,
+      },
+    );
+    
+    // Incrementa contador de ads assistidos
+    await _incrementAdsWatched();
+  }
+
+  /// Registra falha ao carregar anúncio
+  Future<void> trackAdFailed({
+    required String adUnitId,
+    required String errorMessage,
+    int? errorCode,
+  }) async {
+    await _logEvent(
+      name: 'ad_failed_to_load',
+      parameters: {
+        'ad_unit_id': adUnitId,
+        'error_message': errorMessage,
+        if (errorCode != null) 'error_code': errorCode,
+      },
+    );
+  }
+
+  /// Registra quando usuário atinge limite diário
+  Future<void> trackLimitReached({
+    required String featureType,
+    required int dailyLimit,
+    int? sessionCount,
+  }) async {
+    await _logEvent(
+      name: 'limit_reached',
+      parameters: {
+        'feature_type': featureType,
+        'daily_limit': dailyLimit,
+        if (sessionCount != null) 'session_count': sessionCount,
+      },
+    );
+    
+    // Rastreia primeira vez que atinge limite
+    await _trackFirstTimeEvent(
+      _keyFirstLimitReached,
+      'limit_first_reached',
+      {'feature_type': featureType},
+    );
+  }
+
+  /// Registra quando banner de aviso de limite é exibido
+  Future<void> trackLimitWarningShown({
+    required String featureType,
+    required int remaining,
+  }) async {
+    await _logEvent(
+      name: 'limit_warning_shown',
+      parameters: {
+        'feature_type': featureType,
+        'remaining': remaining,
+      },
+    );
+  }
+
+  /// Registra quando dialog de limite atingido é exibido
+  Future<void> trackAdPromptShown({
+    required String featureType,
+  }) async {
+    await _logEvent(
+      name: 'ad_prompt_shown',
+      parameters: {
+        'feature_type': featureType,
+      },
+    );
+  }
+
+  /// Registra quando feature é desbloqueada
+  Future<void> trackFeatureUnlock({
+    required String featureType,
+    required String unlockSource, // 'ad', 'purchase', 'trial', etc.
+    required int durationHours,
+  }) async {
+    await _logEvent(
+      name: 'feature_unlock',
+      parameters: {
+        'feature_type': featureType,
+        'unlock_source': unlockSource,
+        'duration_hours': durationHours,
+      },
+    );
+  }
+
+  /// Incrementa contador de ads assistidos
+  Future<void> _incrementAdsWatched() async {
+    try {
+      final currentCount = _localStorage?.getInt(_keyTotalAdsWatched) ?? 0;
+      final newCount = currentCount + 1;
+      await _localStorage?.setInt(_keyTotalAdsWatched, newCount);
+      await setUserProperty(name: 'total_ads_watched', value: newCount.toString());
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao incrementar ads watched: $e');
+      }
+    }
+  }
+
+  // ==================== EVENTOS DE RETENÇÃO ====================
 
   /// Registra um evento de retenção
   Future<void> trackRetentionEvent({
     required RetentionEventType type,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
+    await _logEvent(
       name: 'retention_${type.name}',
-      category: 'retention',
-      properties: {
+      parameters: {
         'event_type': type.name,
-        ...?properties,
+        ...?_sanitizeParams(properties),
       },
     );
   }
+
+  // ==================== EVENTOS DE ENGAJAMENTO ====================
 
   /// Registra um evento de engajamento
   Future<void> trackEngagementEvent({
@@ -88,36 +412,46 @@ class AnalyticsService {
     String? screen,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
+    await _logEvent(
       name: 'engagement_$action',
-      category: 'engagement',
-      properties: {
+      parameters: {
         'action': action,
-        'screen': screen,
-        ...?properties,
+        if (screen != null) 'screen': screen,
+        ...?_sanitizeParams(properties),
       },
     );
   }
 
-  /// Registra um evento personalizado
-  Future<void> trackCustomEvent({
-    required String name,
-    String? category,
+  // ==================== EVENTOS DE NAVEGAÇÃO ====================
+
+  /// Registra visualização de tela
+  Future<void> trackScreenView({
+    required String screenName,
+    String? screenClass,
+    String? previousScreen,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
-      name: name,
-      category: category ?? 'custom',
-      properties: properties,
-    );
+    try {
+      await _analytics.logScreenView(
+        screenName: screenName,
+        screenClass: screenClass ?? screenName,
+      );
+      
+      if (kDebugMode) {
+        print('📊 Screen view: $screenName');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Erro ao registrar screen view: $e');
+      }
+    }
   }
 
   /// Registra início de sessão
   Future<void> trackSessionStart() async {
-    await _trackEvent(
+    await _logEvent(
       name: 'session_start',
-      category: 'session',
-      properties: {
+      parameters: {
         'timestamp': DateTime.now().toIso8601String(),
       },
     );
@@ -125,205 +459,91 @@ class AnalyticsService {
 
   /// Registra fim de sessão
   Future<void> trackSessionEnd({int? durationSeconds}) async {
-    await _trackEvent(
+    await _logEvent(
       name: 'session_end',
-      category: 'session',
-      properties: {
-        'duration_seconds': durationSeconds,
+      parameters: {
+        if (durationSeconds != null) 'duration_seconds': durationSeconds,
         'timestamp': DateTime.now().toIso8601String(),
       },
     );
   }
 
-  /// Registra visualização de tela
-  Future<void> trackScreenView({
-    required String screenName,
-    String? previousScreen,
+  // ==================== EVENTOS CUSTOMIZADOS ====================
+
+  /// Registra um evento personalizado
+  Future<void> trackCustomEvent({
+    required String name,
+    String? category,
     Map<String, dynamic>? properties,
   }) async {
-    await _trackEvent(
-      name: 'screen_view',
-      category: 'navigation',
-      properties: {
-        'screen_name': screenName,
-        'previous_screen': previousScreen,
-        ...?properties,
+    await _logEvent(
+      name: name,
+      parameters: {
+        if (category != null) 'category': category,
+        ...?_sanitizeParams(properties),
       },
     );
   }
 
-  /// Método interno para registrar eventos
-  Future<void> _trackEvent({
+  // ==================== MÉTODOS INTERNOS ====================
+
+  /// Método interno para enviar eventos ao Firebase
+  Future<void> _logEvent({
     required String name,
-    required String category,
-    Map<String, dynamic>? properties,
+    Map<String, Object>? parameters,
   }) async {
     if (!_isInitialized) {
       await initialize();
     }
 
-    final event = AnalyticsEvent(
-      name: name,
-      category: category,
-      properties: properties ?? {},
-      timestamp: DateTime.now(),
-    );
-
-    // Adiciona à fila local
-    _eventQueue.add(event);
-
-    // Salva no armazenamento local para persistência
-    await _savePendingEvents();
-
-    if (kDebugMode) {
-      print('📊 Evento registrado: ${event.name} (${event.category})');
-    }
-
-    // Tenta enviar eventos se houver conexão
-    _trySyncEvents();
-  }
-
-  /// Carrega eventos pendentes do armazenamento local
-  Future<void> _loadPendingEvents() async {
     try {
-      final eventsData = _localStorage.getStringList('pending_analytics_events');
-      if (eventsData != null) {
-        for (final eventJson in eventsData) {
-          try {
-            final event = AnalyticsEvent.fromJson(eventJson);
-            _eventQueue.add(event);
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Erro ao carregar evento: $e');
-            }
-          }
+      // Firebase Analytics tem limite de 40 caracteres para nome do evento
+      final sanitizedName = name.length > 40 ? name.substring(0, 40) : name;
+      
+      await _analytics.logEvent(
+        name: sanitizedName,
+        parameters: parameters,
+      );
+      
+      if (kDebugMode) {
+        print('📊 Evento Firebase: $sanitizedName');
+        if (parameters != null && parameters.isNotEmpty) {
+          print('   Params: $parameters');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ Erro ao carregar eventos pendentes: $e');
+        print('❌ Erro ao enviar evento $name: $e');
       }
     }
   }
 
-  /// Salva eventos pendentes no armazenamento local
-  Future<void> _savePendingEvents() async {
-    try {
-      final eventsJson = _eventQueue.map((e) => e.toJson()).toList();
-      await _localStorage.setStringList('pending_analytics_events', eventsJson);
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Erro ao salvar eventos pendentes: $e');
-      }
-    }
-  }
-
-  /// Configura sincronização periódica de eventos
-  void _scheduleEventSync() {
-    // Implementar timer para sincronização periódica
-    // Por enquanto, apenas tenta sincronizar a cada evento
-  }
-
-  /// Tenta sincronizar eventos com o servidor
-  Future<void> _trySyncEvents() async {
-    if (_eventQueue.isEmpty) return;
-
-    try {
-      // TODO: Implementar envio real para Firebase Analytics ou outro serviço
-      // Por enquanto, apenas simula o envio bem-sucedido
-      
-      if (kDebugMode) {
-        print('📤 Sincronizando ${_eventQueue.length} eventos...');
-      }
-
-      // Simula delay de rede
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Limpa eventos após envio bem-sucedido
-      _eventQueue.clear();
-      await _localStorage.remove('pending_analytics_events');
-
-      if (kDebugMode) {
-        print('✅ Eventos sincronizados com sucesso');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Erro ao sincronizar eventos: $e');
-      }
-      // Mantém eventos na fila para tentar novamente depois
-    }
-  }
-
-  /// Força sincronização de todos os eventos pendentes
-  Future<void> syncAllEvents() async {
-    await _trySyncEvents();
-  }
-
-  /// Limpa todos os eventos pendentes
-  Future<void> clearAllEvents() async {
-    _eventQueue.clear();
-    await _localStorage.remove('pending_analytics_events');
-  }
-
-  /// Obtém estatísticas dos eventos
-  Map<String, dynamic> getEventStats() {
-    final categoryCount = <String, int>{};
-    final eventCount = <String, int>{};
-
-    for (final event in _eventQueue) {
-      categoryCount[event.category] = (categoryCount[event.category] ?? 0) + 1;
-      eventCount[event.name] = (eventCount[event.name] ?? 0) + 1;
-    }
-
-    return {
-      'total_events': _eventQueue.length,
-      'categories': categoryCount,
-      'events': eventCount,
-    };
-  }
-}
-
-/// Modelo de evento de analytics
-class AnalyticsEvent {
-  final String name;
-  final String category;
-  final Map<String, dynamic> properties;
-  final DateTime timestamp;
-
-  AnalyticsEvent({
-    required this.name,
-    required this.category,
-    required this.properties,
-    required this.timestamp,
-  });
-
-  /// Converte para JSON
-  String toJson() {
-    return '{'
-        '"name": "$name",'
-        '"category": "$category",'
-        '"properties": ${_mapToJson(properties)},'
-        '"timestamp": "${timestamp.toIso8601String()}"'
-        '}';
-  }
-
-  /// Cria instância a partir de JSON
-  factory AnalyticsEvent.fromJson(String json) {
-    // Implementação simplificada - em produção usar biblioteca JSON
-    final data = <String, dynamic>{}; // Parse real do JSON
+  /// Sanitiza parâmetros para Firebase Analytics
+  Map<String, Object>? _sanitizeParams(Map<String, dynamic>? params) {
+    if (params == null) return null;
     
-    return AnalyticsEvent(
-      name: data['name'] ?? '',
-      category: data['category'] ?? '',
-      properties: data['properties'] ?? {},
-      timestamp: DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now(),
-    );
+    final sanitized = <String, Object>{};
+    for (final entry in params.entries) {
+      if (entry.value != null) {
+        // Firebase aceita String, int, double
+        if (entry.value is String || entry.value is int || entry.value is double || entry.value is bool) {
+          sanitized[entry.key] = entry.value;
+        } else {
+          sanitized[entry.key] = entry.value.toString();
+        }
+      }
+    }
+    return sanitized.isEmpty ? null : sanitized;
   }
 
-  String _mapToJson(Map<String, dynamic> map) {
-    final entries = map.entries.map((e) => '"${e.key}": "${e.value}"').join(',');
-    return '{$entries}';
-  }
+  /// Obtém instância do FirebaseAnalytics para uso externo (ex: Observer)
+  FirebaseAnalytics get firebaseAnalytics => _analytics;
+
+  /// Obtém contador de sessões atual
+  int get sessionCount => _localStorage?.getInt(_keySessionCount) ?? 0;
+
+  /// Obtém total de ads assistidos
+  int get totalAdsWatched => _localStorage?.getInt(_keyTotalAdsWatched) ?? 0;
 }
 
 /// Tipos de eventos de chat
@@ -354,4 +574,15 @@ enum RetentionEventType {
   featureDiscovered,
   goalCompleted,
   churnRisk,
+}
+
+/// Tipos de eventos de monetização
+enum MonetizationEventType {
+  limitWarningShown,
+  limitReached,
+  adPromptShown,
+  adStarted,
+  adCompleted,
+  adFailed,
+  featureUnlocked,
 }

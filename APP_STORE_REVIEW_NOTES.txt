@@ -1,0 +1,36 @@
+REVIEW NOTES - CORRECTIONS IMPLEMENTED
+
+Dear Apple Review Team,
+
+We have addressed all issues from the previous review:
+
+1. PRIVACY (Guideline 5.1.2) - RESOLVED:
+   - Removed NSUserTrackingUsageDescription from Info.plist
+   - Updated App Store Connect privacy settings to "No Tracking"
+   - Email collection is only for authentication and app functionality, NOT advertising tracking
+   - Our app does not require App Tracking Transparency framework
+
+2. SUPPORT URL (Guideline 1.5) - RESOLVED:
+   - Created functional support website at https://assistente-financeiro-ai.web.app
+   - Website includes complete support info, privacy policy, and terms of service
+   - Verified working with HTTP 200 status on all devices
+
+VERIFICATION:
+✅ Privacy settings accurately reflect our data practices
+✅ Support URL fully functional and accessible
+✅ Code compliance verified
+✅ All functionality tested on iOS devices
+
+The app now provides clear support infrastructure while maintaining accurate privacy disclosures that reflect our actual data collection practices.
+
+Contact: suporte@assistentefinanceiro.app
+Support: https://assistente-financeiro-ai.web.app
+
+Thank you for your review.
+
+Assistente Financeiro IA Team
+
+
+
+
+

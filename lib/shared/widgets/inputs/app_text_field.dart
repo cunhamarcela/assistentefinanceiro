@@ -18,6 +18,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final void Function(String)? onFieldSubmitted;
+  final void Function()? onEditingComplete;
   final void Function()? onTap;
   final bool readOnly;
   final bool enabled;
@@ -41,6 +42,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.onEditingComplete,
     this.onTap,
     this.readOnly = false,
     this.enabled = true,
@@ -61,6 +63,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.onEditingComplete,
     this.onTap,
     this.readOnly = false,
     this.enabled = true,
@@ -86,6 +89,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.onEditingComplete,
     this.onTap,
     this.readOnly = false,
     this.enabled = true,
@@ -109,6 +113,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.onEditingComplete,
     this.onTap,
     this.readOnly = false,
     this.enabled = true,
@@ -132,6 +137,7 @@ class AppTextField extends StatelessWidget {
     this.errorText,
     this.onChanged,
     this.onFieldSubmitted,
+    this.onEditingComplete,
     this.onTap,
     this.readOnly = false,
     this.enabled = true,
@@ -168,6 +174,7 @@ class AppTextField extends StatelessWidget {
           validator: validator,
           onChanged: onChanged,
           onFieldSubmitted: onFieldSubmitted,
+          onEditingComplete: onEditingComplete,
           onTap: onTap,
           readOnly: readOnly,
           enabled: enabled,

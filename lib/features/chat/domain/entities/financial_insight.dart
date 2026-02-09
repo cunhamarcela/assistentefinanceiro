@@ -234,3 +234,4 @@ enum FinancialInsightPriority {
   high,
   critical,
 }
+

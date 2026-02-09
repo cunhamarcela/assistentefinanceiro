@@ -8,7 +8,7 @@ import '../../../auth/data/services/auth_service.dart';
 class ExpenseLocalDataSource {
   static Database? _database;
   static const String _databaseName = 'expenses.db';
-  static const int _databaseVersion = 2; // Incrementado para migration
+  static const int _databaseVersion = 4; // Incrementado para adicionar colunas de IA
 
   // Tabelas
   static const String _expensesTable = 'expenses';
@@ -48,7 +48,7 @@ class ExpenseLocalDataSource {
       )
     ''');
 
-    // Criar tabela de despesas com userId
+    // Criar tabela de despesas com userId, campos de pagamento e IA
     await db.execute('''
       CREATE TABLE $_expensesTable (
         id TEXT PRIMARY KEY,
@@ -60,6 +60,12 @@ class ExpenseLocalDataSource {
         notes TEXT,
         createdAt INTEGER NOT NULL,
         updatedAt INTEGER NOT NULL,
+        paymentType TEXT,
+        creditCardId TEXT,
+        installmentInfo TEXT,
+        source TEXT,
+        aiParsedData TEXT,
+        aiConfidence REAL,
         FOREIGN KEY (categoryId) REFERENCES $_categoriesTable (id)
       )
     ''');
@@ -70,8 +76,11 @@ class ExpenseLocalDataSource {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('🔄 Iniciando migração do banco de dados da versão $oldVersion para $newVersion');
+    
     if (oldVersion < 2) {
       // Migração da versão 1 para 2: adicionar userId
+      print('📝 Migração v1 -> v2: Adicionando userId...');
       await db.execute('ALTER TABLE $_categoriesTable ADD COLUMN userId TEXT DEFAULT ""');
       await db.execute('ALTER TABLE $_expensesTable ADD COLUMN userId TEXT DEFAULT ""');
       
@@ -79,8 +88,66 @@ class ExpenseLocalDataSource {
       await db.execute('CREATE INDEX idx_expenses_userId ON $_expensesTable (userId)');
       await db.execute('CREATE INDEX idx_categories_userId ON $_categoriesTable (userId)');
       
-      print('✅ Migração do banco de dados concluída');
+      print('✅ Migração v1 -> v2 concluída');
     }
+    
+    if (oldVersion < 3) {
+      // Migração da versão 2 para 3: adicionar campos de pagamento
+      print('📝 Migração v2 -> v3: Adicionando campos de pagamento...');
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN paymentType TEXT');
+        print('✅ Coluna paymentType adicionada');
+      } catch (e) {
+        print('⚠️ Coluna paymentType já existe ou erro: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN creditCardId TEXT');
+        print('✅ Coluna creditCardId adicionada');
+      } catch (e) {
+        print('⚠️ Coluna creditCardId já existe ou erro: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN installmentInfo TEXT');
+        print('✅ Coluna installmentInfo adicionada');
+      } catch (e) {
+        print('⚠️ Coluna installmentInfo já existe ou erro: $e');
+      }
+      
+      print('✅ Migração v2 -> v3 concluída');
+    }
+    
+    if (oldVersion < 4) {
+      // Migração da versão 3 para 4: adicionar campos de IA
+      print('📝 Migração v3 -> v4: Adicionando campos de IA...');
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN source TEXT');
+        print('✅ Coluna source adicionada');
+      } catch (e) {
+        print('⚠️ Coluna source já existe ou erro: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN aiParsedData TEXT');
+        print('✅ Coluna aiParsedData adicionada');
+      } catch (e) {
+        print('⚠️ Coluna aiParsedData já existe ou erro: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $_expensesTable ADD COLUMN aiConfidence REAL');
+        print('✅ Coluna aiConfidence adicionada');
+      } catch (e) {
+        print('⚠️ Coluna aiConfidence já existe ou erro: $e');
+      }
+      
+      print('✅ Migração v3 -> v4 concluída');
+    }
+    
+    print('✅ Todas as migrações concluídas!');
   }
 
   /// Obter userId atual
@@ -297,18 +364,70 @@ class ExpenseLocalDataSource {
   }
 
   Future<void> updateExpense(ExpenseModel expense) async {
-    final db = await database;
-    final userId = _currentUserId;
-    
-    final expenseData = expense.toSQLite();
-    expenseData['userId'] = userId; // Adicionar userId
-    
-    await db.update(
-      _expensesTable,
-      expenseData,
-      where: 'id = ? AND userId = ?',
-      whereArgs: [expense.id, userId],
-    );
+    try {
+      print('🔄 [SQLite] Iniciando atualização de despesa: ${expense.description}');
+      
+      final db = await database;
+      final userId = _currentUserId;
+      
+      print('🔄 [SQLite] Database obtido, UserId: $userId');
+      
+      // Verificar se a despesa existe antes de atualizar
+      final existing = await db.query(
+        _expensesTable,
+        where: 'id = ? AND userId = ?',
+        whereArgs: [expense.id, userId],
+      );
+      
+      if (existing.isEmpty) {
+        print('❌ [SQLite] ERRO: Despesa não encontrada para atualização');
+        throw Exception('Despesa não encontrada (ID: ${expense.id})');
+      }
+      
+      print('🔄 [SQLite] Despesa encontrada, procedendo com atualização');
+      
+      final expenseData = expense.toSQLite();
+      expenseData['userId'] = userId; // Adicionar userId
+      
+      print('🔄 [SQLite] Dados preparados para atualização:');
+      print('   - ID: ${expenseData['id']}');
+      print('   - Amount: ${expenseData['amount']}');
+      print('   - Description: ${expenseData['description']}');
+      print('   - CategoryId: ${expenseData['categoryId']}');
+      print('   - Date: ${expenseData['date']}');
+      
+      final rowsAffected = await db.update(
+        _expensesTable,
+        expenseData,
+        where: 'id = ? AND userId = ?',
+        whereArgs: [expense.id, userId],
+      );
+      
+      if (rowsAffected > 0) {
+        print('✅ [SQLite] Despesa atualizada com sucesso! Rows affected: $rowsAffected');
+        
+        // Verificar se foi realmente atualizada
+        final verification = await db.query(
+          _expensesTable,
+          where: 'id = ? AND userId = ?',
+          whereArgs: [expense.id, userId],
+        );
+        
+        if (verification.isNotEmpty) {
+          print('✅ [SQLite] Verificação: Dados atualizados confirmados');
+          print('   - Nova descrição: ${verification.first['description']}');
+          print('   - Novo valor: ${verification.first['amount']}');
+        }
+      } else {
+        print('⚠️ [SQLite] Nenhuma linha foi atualizada!');
+        throw Exception('Falha ao atualizar despesa - nenhuma linha afetada');
+      }
+      
+    } catch (e) {
+      print('❌ [SQLite] ERRO ao atualizar despesa: $e');
+      print('❌ [SQLite] Tipo do erro: ${e.runtimeType}');
+      rethrow;
+    }
   }
 
   Future<void> deleteExpense(String id) async {

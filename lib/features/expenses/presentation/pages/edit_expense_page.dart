@@ -8,20 +8,51 @@ import '../../domain/entities/expense.dart';
 import '../controllers/expense_controller.dart';
 import '../widgets/category_selector.dart';
 
-class EditExpensePage extends GetView<ExpenseController> {
+class EditExpensePage extends StatefulWidget {
   const EditExpensePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Receber a despesa como argumento
-    final Expense expense = Get.arguments as Expense;
+  State<EditExpensePage> createState() => _EditExpensePageState();
+}
+
+class _EditExpensePageState extends State<EditExpensePage> {
+  late final ExpenseController controller;
+  late final Expense expense;
+  late final GlobalKey<FormState> formKey;
+  late final TextEditingController amountController;
+  late final TextEditingController descriptionController;
+  late final TextEditingController notesController;
+  late final Rx<DateTime> selectedDate;
+  late final RxString selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
     
-    final formKey = GlobalKey<FormState>();
-    final amountController = TextEditingController(text: expense.amount.toString());
-    final descriptionController = TextEditingController(text: expense.description);
-    final notesController = TextEditingController(text: expense.notes ?? '');
-    final selectedDate = expense.date.obs;
-    final selectedCategoryId = expense.categoryId.obs;
+    // Inicializar controller e despesa
+    controller = Get.find<ExpenseController>();
+    expense = Get.arguments as Expense;
+    
+    // Inicializar form e controllers
+    formKey = GlobalKey<FormState>();
+    amountController = TextEditingController(text: expense.amount.toString());
+    descriptionController = TextEditingController(text: expense.description);
+    notesController = TextEditingController(text: expense.notes ?? '');
+    selectedDate = expense.date.obs;
+    selectedCategoryId = expense.categoryId.obs;
+  }
+
+  @override
+  void dispose() {
+    // Limpar controllers para evitar memory leaks
+    amountController.dispose();
+    descriptionController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
@@ -155,7 +186,7 @@ class EditExpensePage extends GetView<ExpenseController> {
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+[.,]?\d{0,2}')),
       ],
       decoration: InputDecoration(
         labelText: 'Valor *',
@@ -187,11 +218,11 @@ class EditExpensePage extends GetView<ExpenseController> {
   }
 
   Widget _buildDescriptionField(
-    TextEditingController controller,
+    TextEditingController textController,
     RxString selectedCategoryId,
   ) {
     return TextFormField(
-      controller: controller,
+      controller: textController,
       decoration: InputDecoration(
         labelText: 'Descrição *',
         hintText: 'Ex: Almoço no restaurante',
@@ -214,7 +245,7 @@ class EditExpensePage extends GetView<ExpenseController> {
       onChanged: (value) async {
         // Sugestão automática de categoria apenas se não há categoria selecionada
         if (value.length > 3 && selectedCategoryId.value.isEmpty) {
-          final suggestedCategory = await Get.find<ExpenseController>().suggestCategory(value);
+          final suggestedCategory = await controller.suggestCategory(value);
           selectedCategoryId.value = suggestedCategory;
         }
       },

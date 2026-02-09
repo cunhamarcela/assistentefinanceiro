@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 import 'package:get/get.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_conversation.dart';
-import '../../domain/entities/financial_insight.dart';
+import '../../../expenses/domain/entities/financial_insight.dart';
 import '../../../auth/data/services/auth_service.dart';
 
 /// Interface para cache local do chat IA
@@ -385,10 +385,10 @@ class ChatIaCacheDataSourceImpl implements ChatIaCacheDataSource {
           'priority': insight.priority.name,
           'data': _encodeJson(insight.data),
           'createdAt': insight.createdAt.millisecondsSinceEpoch,
-          'expiresAt': insight.expiresAt?.millisecondsSinceEpoch,
-          'tags': insight.tags.join(','),
-          'actionText': insight.actionText,
-          'actionRoute': insight.actionRoute,
+          'expiresAt': null,
+          'tags': '',
+          'actionText': insight.actionSuggestions.isNotEmpty ? insight.actionSuggestions.first : null,
+          'actionRoute': null,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -421,13 +421,11 @@ class ChatIaCacheDataSourceImpl implements ChatIaCacheDataSource {
           type: _parseInsightType(insightData['type'] as String),
           priority: _parseInsightPriority(insightData['priority'] as String),
           data: _decodeJson(insightData['data'] as String),
+          actionSuggestions: [
+            if (insightData['actionText'] != null) insightData['actionText'] as String
+          ],
           createdAt: DateTime.fromMillisecondsSinceEpoch(insightData['createdAt'] as int),
-          expiresAt: insightData['expiresAt'] != null 
-              ? DateTime.fromMillisecondsSinceEpoch(insightData['expiresAt'] as int)
-              : null,
-          tags: (insightData['tags'] as String).split(',').where((tag) => tag.isNotEmpty).toList(),
-          actionText: insightData['actionText'] as String?,
-          actionRoute: insightData['actionRoute'] as String?,
+          isRead: false,
         );
       }).toList();
     } catch (e) {
@@ -465,18 +463,22 @@ class ChatIaCacheDataSourceImpl implements ChatIaCacheDataSource {
 
   FinancialInsightType _parseInsightType(String type) {
     switch (type) {
-      case 'success':
-        return FinancialInsightType.success;
-      case 'warning':
-        return FinancialInsightType.warning;
-      case 'error':
-        return FinancialInsightType.error;
-      case 'info':
-        return FinancialInsightType.info;
-      case 'opportunity':
-        return FinancialInsightType.opportunity;
+      case 'budgetExceeded':
+        return FinancialInsightType.budgetExceeded;
+      case 'budgetWarning':
+        return FinancialInsightType.budgetWarning;
+      case 'savingsOpportunity':
+        return FinancialInsightType.savingsOpportunity;
+      case 'goalProgress':
+        return FinancialInsightType.goalProgress;
+      case 'spendingPattern':
+        return FinancialInsightType.spendingPattern;
+      case 'categoryAnalysis':
+        return FinancialInsightType.categoryAnalysis;
+      case 'monthlyComparison':
+        return FinancialInsightType.monthlyComparison;
       default:
-        return FinancialInsightType.info;
+        return FinancialInsightType.spendingPattern;
     }
   }
 
@@ -488,8 +490,8 @@ class ChatIaCacheDataSourceImpl implements ChatIaCacheDataSource {
         return FinancialInsightPriority.medium;
       case 'high':
         return FinancialInsightPriority.high;
-      case 'critical':
-        return FinancialInsightPriority.critical;
+      case 'urgent':
+        return FinancialInsightPriority.urgent;
       default:
         return FinancialInsightPriority.medium;
     }

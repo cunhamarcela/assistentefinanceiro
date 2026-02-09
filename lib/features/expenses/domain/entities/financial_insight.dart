@@ -59,6 +59,7 @@ enum FinancialInsightType {
   spendingPattern,    // Padrão de gastos
   categoryAnalysis,   // Análise de categoria
   monthlyComparison,  // Comparação mensal
+  positiveProgress,   // Progresso positivo (parabéns!)
 }
 
 /// Prioridades dos insights
@@ -86,6 +87,8 @@ extension FinancialInsightTypeExtension on FinancialInsightType {
         return 'Análise de Categoria';
       case FinancialInsightType.monthlyComparison:
         return 'Comparação Mensal';
+      case FinancialInsightType.positiveProgress:
+        return 'Progresso Positivo';
     }
   }
 
@@ -105,6 +108,8 @@ extension FinancialInsightTypeExtension on FinancialInsightType {
         return '🔍';
       case FinancialInsightType.monthlyComparison:
         return '📈';
+      case FinancialInsightType.positiveProgress:
+        return '🎉';
     }
   }
 }

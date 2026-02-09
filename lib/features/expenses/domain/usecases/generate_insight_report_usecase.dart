@@ -169,7 +169,10 @@ class GenerateInsightReportUseCase {
       throw Exception('Data inicial deve ser anterior à data final');
     }
     
-    if (endDate.isAfter(DateTime.now())) {
+    // Permite até o final do dia atual (23:59:59)
+    final now = DateTime.now();
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    if (endDate.isAfter(endOfToday)) {
       throw Exception('Data final não pode ser no futuro');
     }
     
@@ -205,33 +208,36 @@ class GenerateInsightReportUseCase {
   DateRange _getDateRangeForPeriod(ReportPeriod period) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
     
     switch (period) {
       case ReportPeriod.today:
-        return DateRange(start: today, end: today);
+        return DateRange(start: today, end: endOfToday);
       case ReportPeriod.yesterday:
         final yesterday = today.subtract(const Duration(days: 1));
-        return DateRange(start: yesterday, end: yesterday);
+        final endOfYesterday = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, 999);
+        return DateRange(start: yesterday, end: endOfYesterday);
       case ReportPeriod.thisWeek:
         final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
-        return DateRange(start: startOfWeek, end: today);
+        return DateRange(start: startOfWeek, end: endOfToday);
       case ReportPeriod.lastWeek:
         final endOfLastWeek = today.subtract(Duration(days: today.weekday));
+        final endOfLastWeekFull = DateTime(endOfLastWeek.year, endOfLastWeek.month, endOfLastWeek.day, 23, 59, 59, 999);
         final startOfLastWeek = endOfLastWeek.subtract(const Duration(days: 6));
-        return DateRange(start: startOfLastWeek, end: endOfLastWeek);
+        return DateRange(start: startOfLastWeek, end: endOfLastWeekFull);
       case ReportPeriod.thisMonth:
         final startOfMonth = DateTime(today.year, today.month, 1);
-        return DateRange(start: startOfMonth, end: today);
+        return DateRange(start: startOfMonth, end: endOfToday);
       case ReportPeriod.lastMonth:
         final startOfLastMonth = DateTime(today.year, today.month - 1, 1);
-        final endOfLastMonth = DateTime(today.year, today.month, 0);
+        final endOfLastMonth = DateTime(today.year, today.month, 0, 23, 59, 59, 999);
         return DateRange(start: startOfLastMonth, end: endOfLastMonth);
       case ReportPeriod.last30Days:
         final start = today.subtract(const Duration(days: 30));
-        return DateRange(start: start, end: today);
+        return DateRange(start: start, end: endOfToday);
       case ReportPeriod.last90Days:
         final start = today.subtract(const Duration(days: 90));
-        return DateRange(start: start, end: today);
+        return DateRange(start: start, end: endOfToday);
     }
   }
 }
@@ -255,3 +261,4 @@ class DateRange {
 
   DateRange({required this.start, required this.end});
 }
+

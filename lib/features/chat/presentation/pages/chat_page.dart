@@ -3,11 +3,16 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/buttons/app_button.dart';
+import '../../../../core/services/app_logger.dart';
+import '../../../../core/services/logging_service.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../controllers/chat_controller.dart';
 import '../widgets/chat_message_bubble.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/typing_indicator.dart';
+import '../widgets/quick_questions_chips.dart';
+import '../../../monetization/domain/entities/usage_limit.dart';
+import '../../../monetization/presentation/widgets/usage_limit_widget.dart';
 
 /// Página principal do chat IA
 class ChatPage extends GetView<ChatController> {
@@ -15,15 +20,106 @@ class ChatPage extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.debug(FeatureTag.chat, '🎨 [ChatPage] build() chamado', data: {
+      'messages_count': controller.messages.length,
+      'is_loading': controller.isLoading.value,
+      'is_typing': controller.isTyping.value,
+    });
+    
+    // Listener para mostrar dialog de limite atingido
+    ever(controller.showLimitDialog, (show) {
+      if (show) {
+        _showLimitReachedDialog(context);
+        controller.dismissLimitDialog();
+      }
+    });
+    
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: _buildAppBar(),
       body: Column(
         children: [
+          // Banner de aviso quando próximo do limite
+          _buildLimitWarningBanner(),
           Expanded(child: _buildMessagesList()),
           _buildInputArea(),
         ],
       ),
+    );
+  }
+  
+  /// Banner de aviso quando próximo do limite
+  Widget _buildLimitWarningBanner() {
+    return Obx(() {
+      if (!controller.shouldShowLimitWarning) {
+        return const SizedBox.shrink();
+      }
+      
+      final limit = controller.currentUsageLimit.value;
+      final isLastUse = limit?.isLastUse ?? false;
+      
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.colorBrandPrimary,
+              AppColors.colorBrandDark,
+            ],
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isLastUse ? Icons.warning_amber_rounded : Icons.info_outline,
+              color: AppColors.colorTextOnDark,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isLastUse 
+                    ? '⚠️ Última mensagem gratuita! Desbloqueie 24h de uso ilimitado.'
+                    : '${limit?.remainingToday ?? 0} mensagens restantes hoje',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.colorTextOnDark,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => controller.showAdToUnlockChat(),
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.colorActionPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: Size.zero,
+              ),
+              child: Text(
+                '🎬 Desbloquear',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.colorTextOnDark,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+  
+  /// Mostra dialog quando limite é atingido
+  void _showLimitReachedDialog(BuildContext context) {
+    // Rastreia exibição do prompt de anúncio
+    AnalyticsService.instance.trackAdPromptShown(featureType: 'aiChat');
+    
+    LimitReachedDialog.show(
+      context,
+      featureType: FeatureType.aiChat,
+      onWatchAd: () {
+        controller.showAdToUnlockChat();
+      },
     );
   }
 
@@ -32,6 +128,7 @@ class ChatPage extends GetView<ChatController> {
       backgroundColor: AppColors.background,
       elevation: 1,
       shadowColor: AppColors.divider,
+      iconTheme: IconThemeData(color: AppColors.colorBrandPrimary),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -54,6 +151,8 @@ class ChatPage extends GetView<ChatController> {
         ],
       ),
       actions: [
+        // Indicador de uso de mensagens
+        _buildUsageIndicator(),
         PopupMenuButton<String>(
           icon: Icon(
             Icons.more_vert,
@@ -141,14 +240,47 @@ class ChatPage extends GetView<ChatController> {
         ),
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: ChatInput(
-            controller: controller.messageController,
-            onSend: controller.sendMessage,
-            enabled: controller.canSendMessage,
-            isLoading: controller.isSendingMessage.value,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Perguntas rápidas acima do input
+            Obx(() {
+              final showQuickQuestions = !controller.isAwaitingExpenseConfirmation.value &&
+                         !controller.isProcessingQuickQuestion.value &&
+                         controller.messages.isNotEmpty;
+              
+              AppLogger.debug(FeatureTag.chat, '🎨 [ChatPage] Renderizando área de input', data: {
+                'show_quick_questions': showQuickQuestions,
+                'is_awaiting_expense': controller.isAwaitingExpenseConfirmation.value,
+                'is_processing_quick': controller.isProcessingQuickQuestion.value,
+                'has_messages': controller.messages.isNotEmpty,
+              });
+              
+              return QuickQuestionsInputSection(
+                onQuestionSelected: (question) {
+                  AppLogger.info(FeatureTag.chat, '👆 [ChatPage] Pergunta rápida selecionada na área de input', data: {
+                    'question_id': question.id,
+                    'question_text': question.text,
+                  });
+                  controller.handleQuickQuestion(question);
+                },
+                isVisible: showQuickQuestions,
+              );
+            }),
+            // Campo de input
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Obx(() => ChatInput(
+                controller: controller.messageController,
+                onSend: controller.sendMessage,
+                enabled: !controller.isLoading.value && 
+                         !controller.isSendingMessage.value &&
+                         !controller.isProcessingQuickQuestion.value,
+                isLoading: controller.isSendingMessage.value || 
+                           controller.isProcessingQuickQuestion.value,
+              )),
+            ),
+          ],
         ),
       ),
     );
@@ -175,83 +307,55 @@ class ChatPage extends GetView<ChatController> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.smart_toy,
-                size: 64,
-                color: AppColors.primary,
-              ),
+    AppLogger.debug(FeatureTag.chat, '🎨 [ChatPage] Renderizando estado vazio (empty state)');
+    
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: AppSpacing.xl),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              color: AppColors.colorBrandSoft.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Olá! 👋',
-              style: AppTextStyles.headingMedium.copyWith(
-                color: AppColors.textDark,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Sou seu assistente financeiro inteligente.\nComo posso ajudar você hoje?',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            _buildQuickActions(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    final quickActions = [
-      {
-        'title': 'Analisar Gastos',
-        'subtitle': 'Ver resumo dos meus gastos',
-        'icon': Icons.analytics,
-        'message': 'Mostre um resumo dos meus gastos deste mês',
-      },
-      {
-        'title': 'Criar Relatório',
-        'subtitle': 'Gerar relatório visual',
-        'icon': Icons.bar_chart,
-        'message': 'Crie um relatório visual dos meus gastos por categoria',
-      },
-      {
-        'title': 'Dicas de Economia',
-        'subtitle': 'Sugestões personalizadas',
-        'icon': Icons.lightbulb,
-        'message': 'Dê dicas de como posso economizar dinheiro',
-      },
-    ];
-
-    return Column(
-      children: quickActions.map((action) {
-        return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: AppButton.outlined(
-            text: action['title'] as String,
-            icon: action['icon'] as IconData,
-            onPressed: () => controller.sendMessage(
-              text: action['message'] as String,
+            child: Icon(
+              Icons.smart_toy,
+              size: 64,
+              color: AppColors.colorBrandSoft,
             ),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'Olá! 👋',
+            style: AppTextStyles.headingMedium.copyWith(
+              color: AppColors.colorTextPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Sou seu assistente financeiro inteligente.\nComo posso ajudar você hoje?',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.colorTextSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          // Perguntas rápidas organizadas por categoria
+          QuickQuestionsExpanded(
+            onQuestionSelected: (question) {
+              AppLogger.info(FeatureTag.chat, '👆 [ChatPage] Pergunta rápida selecionada no empty state', data: {
+                'question_id': question.id,
+                'question_text': question.text,
+              });
+              controller.handleQuickQuestion(question);
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
     );
   }
 
@@ -314,4 +418,186 @@ class ChatPage extends GetView<ChatController> {
       snackPosition: SnackPosition.BOTTOM,
     );
   }
+  
+  /// Indicador de uso de mensagens no AppBar
+  Widget _buildUsageIndicator() {
+    return Obx(() {
+      final hasUnlimited = controller.hasUnlimitedAccess.value;
+      final limit = controller.currentUsageLimit.value;
+      
+      // Se não tem dados de limite, mostra o limite padrão
+      final displayLimit = limit ?? UsageLimit.create(
+        userId: 'display',
+        featureType: FeatureType.aiChat,
+      );
+      
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: GestureDetector(
+          onTap: () {
+            if (!hasUnlimited && displayLimit.isNearLimit) {
+              _showUnlockPrompt();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getUsageIndicatorColor(hasUnlimited, displayLimit),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getUsageIndicatorIcon(hasUnlimited, displayLimit),
+                  size: 14,
+                  color: _getUsageIndicatorTextColor(hasUnlimited, displayLimit),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _getUsageDisplayText(hasUnlimited, displayLimit),
+                  style: AppTextStyles.caption.copyWith(
+                    color: _getUsageIndicatorTextColor(hasUnlimited, displayLimit),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+  
+  String _getUsageDisplayText(bool hasUnlimited, UsageLimit limit) {
+    if (hasUnlimited && controller.activeUnlock.value != null) {
+      return '✨ Ilimitado (${controller.activeUnlock.value!.timeRemainingFormatted})';
+    }
+    return '${limit.remainingToday}/${limit.dailyLimit}';
+  }
+  
+  Color _getUsageIndicatorColor(bool hasUnlimited, UsageLimit limit) {
+    if (hasUnlimited) {
+      return AppColors.colorSuccess.withOpacity(0.15);
+    }
+    if (limit.isLimitReached) {
+      return AppColors.colorError.withOpacity(0.15);
+    }
+    if (limit.isNearLimit) {
+      return AppColors.colorWarning.withOpacity(0.15);
+    }
+    return AppColors.colorBackgroundSecondary;
+  }
+  
+  IconData _getUsageIndicatorIcon(bool hasUnlimited, UsageLimit limit) {
+    if (hasUnlimited) {
+      return Icons.star_rounded;
+    }
+    if (limit.isLimitReached) {
+      return Icons.lock_rounded;
+    }
+    if (limit.isNearLimit) {
+      return Icons.warning_amber_rounded;
+    }
+    return Icons.chat_bubble_outline_rounded;
+  }
+  
+  Color _getUsageIndicatorTextColor(bool hasUnlimited, UsageLimit limit) {
+    if (hasUnlimited) {
+      return AppColors.colorSuccess;
+    }
+    if (limit.isLimitReached) {
+      return AppColors.colorError;
+    }
+    if (limit.isNearLimit) {
+      return AppColors.colorWarning;
+    }
+    return AppColors.colorTextSecondary;
+  }
+  
+  /// Mostra prompt para desbloquear
+  void _showUnlockPrompt() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.colorSurfaceCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.colorBorderSubtle,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Icon(
+              Icons.movie_filter_rounded,
+              size: 48,
+              color: AppColors.colorBrandPrimary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Desbloqueie o Chat IA',
+              style: AppTextStyles.headline3.copyWith(
+                color: AppColors.colorTextPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Assista um anúncio curto e ganhe 24 horas de mensagens ilimitadas!',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.colorTextSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  controller.showAdToUnlockChat();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.colorActionPrimary,
+                  foregroundColor: AppColors.colorTextOnDark,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.play_circle_filled_rounded),
+                label: const Text(
+                  'Assistir Anúncio',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text(
+                'Agora não',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.colorTextMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+

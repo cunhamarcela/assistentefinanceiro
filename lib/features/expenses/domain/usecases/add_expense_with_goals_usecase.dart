@@ -20,6 +20,8 @@ class AddExpenseWithGoalsUseCase {
     String? categoryId,
     DateTime? date,
     String? notes,
+    PaymentType paymentType = PaymentType.cash,
+    String? creditCardId,
   }) async {
     // Validações
     if (amount <= 0) {
@@ -32,6 +34,11 @@ class AddExpenseWithGoalsUseCase {
     
     if (description.length > 100) {
       throw ArgumentError('A descrição deve ter no máximo 100 caracteres');
+    }
+
+    // Validação de cartão de crédito
+    if (paymentType == PaymentType.credit && (creditCardId == null || creditCardId.isEmpty)) {
+      throw ArgumentError('Cartão de crédito deve ser selecionado para pagamento com crédito');
     }
 
     // Se não foi fornecida uma categoria, sugere uma automaticamente
@@ -49,6 +56,8 @@ class AddExpenseWithGoalsUseCase {
       categoryId: finalCategoryId,
       date: date,
       notes: notes?.trim(),
+      paymentType: paymentType,
+      creditCardId: creditCardId,
     );
 
     try {

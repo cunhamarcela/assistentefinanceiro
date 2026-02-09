@@ -158,3 +158,4 @@ class ManageConversationUseCase {
     return conversations.first;
   }
 }
+

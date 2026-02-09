@@ -197,6 +197,15 @@ class SecureStorage {
     }
   }
 
+  /// Método genérico para deletar dados
+  Future<void> delete(String key) async {
+    try {
+      await _storage.delete(key: key);
+    } catch (e) {
+      print('Erro ao deletar do SecureStorage: $e');
+    }
+  }
+
   /// Criptografar dados (criptografia simples)
   String _encryptData(String data) {
     final bytes = utf8.encode(data);

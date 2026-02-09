@@ -27,7 +27,7 @@ class AddCategoryPage extends GetView<CategoryController> {
     final selectedColor = (categoryToEdit?.color ?? AppColors.primary).obs;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.colorBackgroundPrimary,
       appBar: AppBar(
         title: Text(
           isEditing ? 'Editar Categoria' : 'Nova Categoria',
@@ -37,13 +37,13 @@ class AddCategoryPage extends GetView<CategoryController> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.colorSurfaceCard,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textDark),
         actions: [
           if (isEditing && categoryToEdit != null && !categoryToEdit.isDefault)
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: const Icon(Icons.delete_outline, color: AppColors.colorError),
               onPressed: () => controller.confirmDeleteCategory(categoryToEdit),
               tooltip: 'Excluir categoria',
             ),
@@ -93,10 +93,10 @@ class AddCategoryPage extends GetView<CategoryController> {
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.colorSurfaceCard,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: AppColors.overlay.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -128,11 +128,11 @@ class AddCategoryPage extends GetView<CategoryController> {
     return Obx(() => Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.colorSurfaceCard,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.overlay.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -149,7 +149,7 @@ class AddCategoryPage extends GetView<CategoryController> {
             ),
             child: Icon(
               _getIconData(selectedIcon.value),
-              color: Colors.white,
+              color: AppColors.colorTextOnDark,
               size: 24.w,
             ),
           ),
@@ -199,14 +199,14 @@ class AddCategoryPage extends GetView<CategoryController> {
             hintText: 'Ex: Transporte, Lazer, Educação',
             prefixIcon: Icon(Icons.label_outline, color: AppColors.primary),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.colorSurfaceCard,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.colorBorderSubtle),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.colorBorderSubtle),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
@@ -214,7 +214,7 @@ class AddCategoryPage extends GetView<CategoryController> {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: AppColors.colorError),
             ),
           ),
           validator: (value) {
@@ -298,14 +298,14 @@ class AddCategoryPage extends GetView<CategoryController> {
             hintText: 'Ex: uber, taxi, ônibus, gasolina (separadas por vírgula)',
             prefixIcon: Icon(Icons.tag_outlined, color: AppColors.primary),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.colorSurfaceCard,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.colorBorderSubtle),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.colorBorderSubtle),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
@@ -313,7 +313,7 @@ class AddCategoryPage extends GetView<CategoryController> {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: AppColors.colorError),
             ),
           ),
           validator: (value) {
@@ -410,8 +410,8 @@ class AddCategoryPage extends GetView<CategoryController> {
                 ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: Colors.grey.shade300,
+          foregroundColor: AppColors.colorTextOnDark,
+          disabledBackgroundColor: AppColors.colorBorderSubtle,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -426,14 +426,14 @@ class AddCategoryPage extends GetView<CategoryController> {
                     height: 20.w,
                     child: const CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorTextOnDark),
                     ),
                   ),
                   SizedBox(width: 12.w),
                   Text(
                     'Salvando...',
                     style: AppTextStyles.button.copyWith(
-                      color: Colors.white,
+                      color: AppColors.colorTextOnDark,
                     ),
                   ),
                 ],
@@ -443,14 +443,14 @@ class AddCategoryPage extends GetView<CategoryController> {
                 children: [
                   Icon(
                     isEditing ? Icons.save_outlined : Icons.add,
-                    color: Colors.white,
+                    color: AppColors.colorTextOnDark,
                     size: 20.w,
                   ),
                   SizedBox(width: 8.w),
                   Text(
                     isEditing ? 'Salvar Alterações' : 'Criar Categoria',
                     style: AppTextStyles.button.copyWith(
-                      color: Colors.white,
+                      color: AppColors.colorTextOnDark,
                     ),
                   ),
                 ],
