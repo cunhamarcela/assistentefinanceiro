@@ -31,9 +31,8 @@ class SecureStorage {
 
   /// Configurações específicas do Android
   AndroidOptions _getAndroidOptions() => const AndroidOptions(
-        encryptedSharedPreferences: true,
-        sharedPreferencesName: 'assistente_financeiro_secure_prefs',
-        preferencesKeyPrefix: 'af_',
+        // encryptedSharedPreferences is deprecated in v11+
+        // sharedPreferencesName is deprecated in v11+
       );
 
   /// Configurações específicas do iOS
